@@ -1,0 +1,273 @@
+// shared.js must be loaded before this file (provides XP_PER_LEVEL, getRank, etc.)
+
+document.addEventListener('deviceready', onDeviceReady, false);
+
+const XP_PER_OBJECTIVE    = 25;
+const XP_PENALTY_PER_MISS = 15;
+
+let db;
+
+function onDeviceReady() {
+  db = window.sqlitePlugin.openDatabase({ name: 'fitness.db', location: 'default' });
+
+  db.transaction(tx => {
+    tx.executeSql(`CREATE TABLE IF NOT EXISTS objectives (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT,
+      completed INTEGER
+    )`);
+  }, err => {
+    console.error('DB Error', err);
+  }, () => {
+    initNotifications(() => {
+      handleDailyReset(() => {
+        // seed first, then render — fixes race condition on first launch
+        seedInitialObjectives(() => {
+          refreshLevelBar();
+          updateNameTag();
+          init();
+        });
+      });
+    });
+  });
+}
+
+// --- Daily reset ---
+
+function handleDailyReset(callback) {
+  const today = new Date().toDateString();
+  const lastOpened = localStorage.getItem('lastOpened');
+  if (lastOpened !== today) {
+    localStorage.setItem('lastOpened', today);
+    checkYesterdayCompletion(() => resetObjectives(callback));
+  } else {
+    callback();
+  }
+}
+
+function checkYesterdayCompletion(next) {
+  db.transaction(tx => {
+    tx.executeSql('SELECT COUNT(*) as total FROM objectives', [], (tx, res) => {
+      const total = res.rows.item(0).total;
+      tx.executeSql('SELECT COUNT(*) as done FROM objectives WHERE completed = 1', [], (tx, res2) => {
+        applyStreakAndPenalty(total, res2.rows.item(0).done);
+      });
+    });
+  }, err => {
+    console.error('Completion check error', err);
+    next();
+  }, () => {
+    next();
+  });
+}
+
+function applyStreakAndPenalty(total, done) {
+  if (total === 0) return;
+  const streak = parseInt(localStorage.getItem('streak') || '0', 10);
+  if (done === total) {
+    localStorage.setItem('streak', streak + 1);
+  } else {
+    const missed  = total - done;
+    const penalty = missed * XP_PENALTY_PER_MISS;
+    localStorage.setItem('totalXP', Math.max(0, getTotalXP() - penalty));
+    localStorage.setItem('streak', 0);
+    setTimeout(() => showPenaltyModal(missed, penalty), 200);
+  }
+}
+
+function showPenaltyModal(missed, penalty) {
+  const overlay = document.getElementById('overlay');
+  const info = document.getElementById('info');
+  const p = info.querySelector('.banner p');
+  p.textContent = missed + ' objective' + (missed > 1 ? 's' : '') + ' unfinished yesterday. −' + penalty + ' XP. Streak reset.';
+  p.className = 'failure';
+  overlay.style.display = 'block';
+  info.style.display = 'block';
+  overlay.addEventListener('click', () => {
+    overlay.style.display = 'none';
+    info.style.display = 'none';
+  }, { once: true });
+}
+
+function resetObjectives(callback) {
+  const level = getLevel(getTotalXP());
+  db.transaction(tx => {
+    // Reset completion AND update targets to match current level
+    GOAL_CONFIG.forEach(cfg => {
+      tx.executeSql(
+        'UPDATE objectives SET completed = 0, title = ? WHERE title LIKE ?',
+        [goalTitle(cfg, level), cfg.name + '%']
+      );
+    });
+  }, err => {
+    console.error('Reset error', err);
+    callback();
+  }, () => {
+    callback();
+  });
+}
+
+// --- Seeding ---
+
+function seedInitialObjectives(callback) {
+  const level = getLevel(getTotalXP());
+  db.transaction(tx => {
+    tx.executeSql('SELECT COUNT(*) as count FROM objectives', [], (tx, res) => {
+      if (res.rows.item(0).count === 0) {
+        GOAL_CONFIG.forEach(cfg => {
+          tx.executeSql('INSERT INTO objectives (title, completed) VALUES (?, ?)', [goalTitle(cfg, level), 0]);
+        });
+      }
+    });
+  }, err => {
+    console.error('Seed error', err);
+    if (callback) callback();
+  }, () => {
+    if (callback) callback();
+  });
+}
+
+// --- XP & level bar ---
+
+function refreshLevelBar() {
+  const xp = getTotalXP();
+  const progress = getLevelProgress(xp);
+  const bar = document.getElementById('levelProgress');
+  bar.style.width = progress + '%';
+  bar.textContent = 'Lv.' + getLevel(xp) + ' — ' + progress + '%';
+}
+
+function updateNameTag() {
+  const xp = getTotalXP();
+  const rank = getRank(getLevel(xp));
+  document.getElementById('nameTag').textContent = getPlayerName() + ' — ' + rank.title;
+}
+
+function animateBar(fromPct, toPct, onDone) {
+  const bar = document.getElementById('levelProgress');
+  let width = fromPct;
+  const id = setInterval(() => {
+    if (width >= toPct) {
+      clearInterval(id);
+      if (onDone) onDone();
+    } else if (width >= 100) {
+      clearInterval(id);
+      if (onDone) onDone();
+    } else {
+      width++;
+      bar.style.width = width + '%';
+    }
+  }, 10);
+}
+
+// --- Objectives UI ---
+
+function init() {
+  const list = document.querySelector('.center ul');
+  list.innerHTML = '';
+
+  db.transaction(tx => {
+    tx.executeSql('SELECT * FROM objectives', [], (tx, res) => {
+      let completedCount = 0;
+      const total = res.rows.length;
+
+      for (let i = 0; i < res.rows.length; i++) {
+        const obj = res.rows.item(i);
+        if (obj.completed) completedCount++;
+
+        const li = document.createElement('li');
+
+        const label = document.createElement('span');
+        // strip the [0/50] notation from the stored title — it's shown separately
+        label.textContent = obj.title.replace(/\s*\[\d+\/\d+\]/, '');
+        if (obj.completed) label.classList.add('striked');
+
+        const status = document.createElement('span');
+        const match = obj.title.match(/\[(\d+)\/(\d+)\]/);
+        if (match) {
+          status.textContent = '[' + (obj.completed ? match[2] : '0') + '/' + match[2] + ']';
+        }
+
+        li.appendChild(label);
+        li.appendChild(status);
+
+        li.addEventListener('click', () => {
+          const newCompleted = obj.completed ? 0 : 1;
+          const xpDelta = newCompleted === 1 ? XP_PER_OBJECTIVE : -XP_PER_OBJECTIVE;
+
+          // Execute the UPDATE, then handle all UI work in the transaction
+          // SUCCESS callback — runs only after the transaction fully commits,
+          // so the next db.transaction in init() won't race with an open one.
+          db.transaction(tx => {
+            tx.executeSql('UPDATE objectives SET completed = ? WHERE id = ?', [newCompleted, obj.id]);
+          }, err => {
+            console.error('Update error', err);
+          }, () => {
+            const oldXP = getTotalXP();
+            const newXP = Math.max(0, oldXP + xpDelta);
+            localStorage.setItem('totalXP', newXP);
+
+            if (xpDelta > 0) {
+              const done = parseInt(localStorage.getItem('totalCompleted') || '0', 10);
+              localStorage.setItem('totalCompleted', done + 1);
+              incrementStat(statForTitle(obj.title));
+            }
+
+            const oldProgress = getLevelProgress(oldXP);
+            const newProgress = getLevelProgress(newXP);
+            const bar = document.getElementById('levelProgress');
+
+            if (xpDelta > 0 && getLevel(newXP) > getLevel(oldXP)) {
+              animateBar(oldProgress, 100, () => {
+                bar.style.width = '0%';
+                bar.textContent = 'Lv.' + getLevel(newXP) + ' — ' + newProgress + '%';
+                animateBar(0, newProgress);
+              });
+            } else if (xpDelta > 0) {
+              bar.textContent = 'Lv.' + getLevel(newXP) + ' — ' + newProgress + '%';
+              animateBar(oldProgress, newProgress);
+            } else {
+              bar.style.width = newProgress + '%';
+              bar.textContent = 'Lv.' + getLevel(newXP) + ' — ' + newProgress + '%';
+            }
+
+            updateNameTag();
+            init();
+          });
+        });
+
+        list.appendChild(li);
+      }
+
+      const popup = document.querySelector('.popup');
+      if (total > 0 && completedCount === total) {
+        popup.classList.add('quest-complete');
+        cancelRemainingTodayNotifications();
+      } else {
+        popup.classList.remove('quest-complete');
+      }
+    });
+  });
+}
+
+// === NODE/JEST EXPORT — invisible in browser ===
+/* istanbul ignore else */
+if (typeof module !== 'undefined') {
+  global._setDb                   = (mockDb) => { db = mockDb; };
+  global.onDeviceReady            = onDeviceReady;
+  global.handleDailyReset         = handleDailyReset;
+  global.checkYesterdayCompletion = checkYesterdayCompletion;
+  global.applyStreakAndPenalty    = applyStreakAndPenalty;
+  global.showPenaltyModal         = showPenaltyModal;
+  global.resetObjectives          = resetObjectives;
+  global.seedInitialObjectives    = seedInitialObjectives;
+  global.refreshLevelBar          = refreshLevelBar;
+  global.updateNameTag            = updateNameTag;
+  global.animateBar               = animateBar;
+  global.init                     = init;
+  module.exports = {
+    onDeviceReady, handleDailyReset, checkYesterdayCompletion, applyStreakAndPenalty,
+    showPenaltyModal, resetObjectives, seedInitialObjectives,
+    refreshLevelBar, updateNameTag, animateBar, init,
+  };
+}

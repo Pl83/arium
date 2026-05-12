@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: content:;">
+        <meta name="format-detection" content="telephone=no">
+        <meta name="msapplication-tap-highlight" content="no">
+        <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover">
+        <meta name="color-scheme" content="light dark">
+        <link rel="stylesheet" href="css/index.css">
+        <title>ARIUM</title>
+    </head>
+    <body>
+        <main class="app">
+            <section id="resume">
+                <h3 id="nameTag">— Loading —</h3>
+                <div id="levelBar">
+                    <div id="levelProgress" style="width:0%">Lv.1 — 0%</div>
+                </div>
+            </section>
+
+            <section class="popup">
+                <div class="top">
+                    <div class="alert">
+                        <img src="./img/alert.svg" alt="" loading="lazy">
+                        <h2>Daily Quest</h2>
+                    </div>
+                </div>
+
+                <div class="center">
+                    <p>Train to become a formidable combatant</p>
+                    <h3 class="sucess">Objectives</h3>
+                    <ul>
+                        <!-- populated by init() -->
+                    </ul>
+                    <p><span class="failure">Caution!</span> Incomplete quests carry penalties.</p>
+                </div>
+
+                <div class="bottom">
+                    <img class="corner leftBottomCorner"  src="./img/corner.svg" alt="" loading="lazy">
+                    <img src="./img/watch.svg" alt="" loading="lazy">
+                    <img class="corner rigthBottonCorner" src="./img/corner.svg" alt="" loading="lazy">
+                </div>
+                <img class="corner leftCorner" src="./img/corner.svg" alt="" loading="lazy">
+                <img class="toper"             src="./img/center.svg" alt="" loading="lazy">
+                <img class="corner righCorner" src="./img/corner.svg" alt="" loading="lazy">
+            </section>
+        </main>
+
+        <div id="overlay" style="display:none;"></div>
+        <div id="info"    style="display:none;">
+            <img class="corner leftCorner" src="./img/corner.svg" alt="" loading="lazy">
+            <img class="corner righCorner" src="./img/corner.svg" alt="" loading="lazy">
+            <img class="toper"             src="./img/center.svg" alt="" loading="lazy">
+            <div class="banner">
+                <div class="alert">
+                    <img src="./img/alert.svg" alt="" loading="lazy">
+                    <h2>Alert</h2>
+                </div>
+                <p></p>
+            </div>
+            <div class="bottom">
+                <img class="corner leftBottomCorner"  src="./img/corner.svg" alt="" loading="lazy">
+                <img class="corner rigthBottonCorner" src="./img/corner.svg" alt="" loading="lazy">
+            </div>
+        </div>
+
+        <footer>
+            <nav>
+                <a href="trial.html"><img src="./img/axe.svg"    alt="trial"   loading="lazy"></a>
+                <a href="index.html"><img src="./img/main.svg"   alt="home"    loading="lazy"></a>
+                <a href="profile.html"><img src="./img/armor.svg" alt="profile" loading="lazy"></a>
+            </nav>
+        </footer>
+
+        <script src="cordova.js"></script>
+        <script src="js/shared.js"></script>
+        <script src="js/notifications.js"></script>
+        <script src="js/index.js"></script>
+    </body>
+</html>

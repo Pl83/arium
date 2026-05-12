@@ -1,0 +1,515 @@
+:root {
+    --font-color:    #C8D8FF;
+    --bg-color:      #07090F;
+    --main-color:    #0B1628;
+    --accent-color:  #4FC3F7;
+    --border-color:  rgba(79, 195, 247, 0.35);
+    --sucess-color:  #00E676;
+    --fail-color:    #FF1744;
+    --reward-color:  #FFD740;
+    --endure-color:  #26C6DA;
+    --glow-blue:     rgba(79, 195, 247, 0.22);
+    --glow-gold:     rgba(255, 215, 64,  0.35);
+    --glow-green:    rgba(0, 230, 118,   0.22);
+    --glow-endure:   rgba(38, 198, 218,  0.22);
+}
+
+* {
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    -webkit-touch-callout: none;
+    -webkit-text-size-adjust: none;
+    -webkit-user-select: none;
+    background-color: var(--bg-color);
+    background-image: radial-gradient(ellipse at 50% 0%, rgba(15, 30, 70, 0.6) 0%, transparent 65%);
+    font-family: system-ui, -apple-system, 'Segoe UI', 'Roboto', sans-serif;
+    font-size: 12px;
+    height: 100vh;
+    overflow: hidden;
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+    text-transform: uppercase;
+    width: 100%;
+    letter-spacing: 0.04em;
+}
+
+.sucess  { color: var(--sucess-color)  !important; font-weight: bold !important; }
+.reward  { color: var(--reward-color)  !important; }
+.failure { color: var(--fail-color)    !important; font-weight: bold !important; }
+
+main.app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-height: calc(100vh - 72px);
+    min-height: calc(100vh - 72px);
+    overflow-y: auto;
+    padding: 24px 20px 16px;
+    gap: 16px;
+}
+
+/* ── Headings ── */
+
+.picker-heading {
+    color: var(--font-color);
+    text-align: center;
+    letter-spacing: 0.3em;
+    font-size: 18px;
+    text-shadow: 0 0 20px var(--accent-color), 0 0 40px rgba(79, 195, 247, 0.15);
+    flex-shrink: 0;
+}
+
+.trial-heading {
+    color: var(--font-color);
+    text-align: center;
+    letter-spacing: 0.2em;
+    font-size: 14px;
+    text-shadow: 0 0 12px var(--accent-color);
+    flex-shrink: 0;
+}
+
+/* ── Tab bar ── */
+
+.tab-bar {
+    display: flex;
+    width: 88vw;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 4px;
+    flex-shrink: 0;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 10px 0;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: rgba(200, 216, 255, 0.35);
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: color 0.15s, border-color 0.15s;
+    margin-bottom: -1px;
+}
+
+.tab-btn.active {
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
+    text-shadow: 0 0 8px var(--glow-blue);
+}
+
+/* ── Stat colours ── */
+
+.stat-strength { color: var(--accent-color); }
+.stat-core     { color: var(--sucess-color); }
+.stat-power    { color: var(--reward-color); }
+.stat-endurance{ color: var(--endure-color); }
+
+/* ── Exercise grid ── */
+
+.exercise-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 88vw;
+}
+
+.exercise-card {
+    background-color: var(--main-color);
+    border: 1px solid var(--border-color);
+    border-top: 2px solid var(--border-color);
+    box-shadow: 0 0 10px var(--glow-blue);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 14px 10px;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+
+.exercise-card[data-stat="strength"] { border-top-color: var(--accent-color); }
+.exercise-card[data-stat="core"]     { border-top-color: var(--sucess-color); }
+.exercise-card[data-stat="power"]    { border-top-color: var(--reward-color); }
+.exercise-card[data-stat="endurance"]{ border-top-color: var(--endure-color); }
+
+.exercise-card:active {
+    transform: scale(0.97);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 18px rgba(79, 195, 247, 0.4);
+}
+
+.ex-name   { color: var(--font-color); font-size: 11px; font-weight: bold; letter-spacing: 0.08em; text-align: center; }
+.ex-stat   { font-size: 8px; letter-spacing: 0.1em; opacity: 0.85; }
+.ex-target { color: rgba(200, 216, 255, 0.5); font-size: 9px; letter-spacing: 0.04em; }
+
+/* ── Challenge list ── */
+
+.challenge-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 88vw;
+}
+
+.challenge-card {
+    background-color: var(--main-color);
+    border: 1px solid rgba(255, 215, 64, 0.3);
+    border-left: 3px solid var(--reward-color);
+    box-shadow: 0 0 16px var(--glow-gold);
+    padding: 16px 18px;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.challenge-card:active {
+    transform: scale(0.98);
+    border-color: var(--reward-color);
+    box-shadow: 0 0 26px rgba(255, 215, 64, 0.5);
+}
+
+.challenge-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.challenge-name {
+    color: var(--font-color);
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 0.12em;
+}
+
+.challenge-badge {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    padding: 3px 8px;
+    border: 1px solid;
+}
+
+.challenge-badge.stat-strength { border-color: var(--accent-color); }
+.challenge-badge.stat-core     { border-color: var(--sucess-color); }
+.challenge-badge.stat-power    { border-color: var(--reward-color); }
+.challenge-badge.stat-endurance{ border-color: var(--endure-color); }
+
+.challenge-exercises {
+    color: rgba(200, 216, 255, 0.45);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+}
+
+/* ── Challenge config exercise list ── */
+
+.challenge-ex-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 88vw;
+}
+
+.challenge-ex-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--main-color);
+    border: 1px solid var(--border-color);
+    padding: 10px 16px;
+}
+
+/* ── Configure screen ── */
+
+.config-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 88vw;
+}
+
+.config-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--main-color);
+    border: 1px solid var(--border-color);
+    padding: 14px 18px;
+}
+
+.config-label {
+    color: var(--font-color);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+}
+
+.config-stepper {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.step-btn {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--accent-color);
+    font-size: 18px;
+    font-family: inherit;
+    cursor: pointer;
+    touch-action: manipulation;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.12s, background 0.12s;
+}
+
+.step-btn:active {
+    background: rgba(79, 195, 247, 0.15);
+    border-color: var(--accent-color);
+}
+
+.step-val {
+    color: var(--reward-color);
+    font-size: 14px;
+    font-weight: bold;
+    min-width: 40px;
+    text-align: center;
+    letter-spacing: 0.06em;
+}
+
+.xp-preview {
+    color: rgba(200, 216, 255, 0.5);
+    font-size: 10px;
+    text-align: center;
+    letter-spacing: 0.1em;
+}
+
+/* ── Set indicator ── */
+
+.set-indicator {
+    color: rgba(200, 216, 255, 0.6);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-align: center;
+}
+
+/* ── Tap area (reps) ── */
+
+.tap-area {
+    width: 88vw;
+    flex: 1;
+    max-height: 260px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background-color: var(--main-color);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 0 18px var(--glow-blue);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.tap-area.tap-complete {
+    border-color: var(--sucess-color);
+    box-shadow: 0 0 28px rgba(0, 230, 118, 0.35);
+}
+
+.rep-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.rep-count {
+    font-size: 72px;
+    font-weight: bold;
+    color: var(--reward-color);
+    text-shadow: 0 0 20px var(--glow-gold);
+    line-height: 1;
+    display: inline-block;
+}
+
+.rep-max {
+    font-size: 22px;
+    color: rgba(200, 216, 255, 0.4);
+    font-weight: bold;
+}
+
+.tap-hint {
+    color: rgba(200, 216, 255, 0.3);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+}
+
+@keyframes repBump {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.18); }
+    100% { transform: scale(1); }
+}
+
+.rep-bump { animation: repBump 0.18s ease-out; }
+
+/* ── Rest screen ── */
+
+.rest-label {
+    color: var(--accent-color);
+    text-shadow: 0 0 14px var(--glow-blue);
+}
+
+.rest-display {
+    font-size: 72px;
+    font-weight: bold;
+    color: var(--accent-color);
+    text-shadow: 0 0 24px var(--glow-blue);
+    letter-spacing: 0.05em;
+}
+
+.rest-next {
+    color: rgba(200, 216, 255, 0.5);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-align: center;
+}
+
+/* ── Active exercise ── */
+
+.big-display {
+    font-size: 60px;
+    font-weight: bold;
+    color: var(--reward-color);
+    letter-spacing: 0.05em;
+    text-shadow: 0 0 20px var(--glow-gold);
+}
+
+/* ── Buttons ── */
+
+.trial-btn {
+    display: block;
+    width: 72vw;
+    padding: 14px 0;
+    background-color: transparent;
+    border: 1px solid var(--accent-color);
+    color: var(--accent-color);
+    font-size: 12px;
+    font-family: inherit;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    touch-action: manipulation;
+    box-shadow: 0 0 12px var(--glow-blue);
+    transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+    flex-shrink: 0;
+}
+
+.trial-btn:active {
+    background-color: rgba(79, 195, 247, 0.12);
+    box-shadow: 0 0 20px rgba(79, 195, 247, 0.4);
+    transform: scale(0.98);
+}
+
+.trial-btn.secondary {
+    border-color: rgba(79, 195, 247, 0.3);
+    color: rgba(200, 216, 255, 0.5);
+    box-shadow: none;
+}
+
+.trial-btn.gold {
+    border-color: var(--reward-color);
+    color: var(--reward-color);
+    box-shadow: 0 0 14px var(--glow-gold);
+}
+
+.trial-btn.gold:active {
+    background-color: rgba(255, 215, 64, 0.12);
+    box-shadow: 0 0 24px rgba(255, 215, 64, 0.5);
+}
+
+.trial-btn:disabled {
+    opacity: 0.3;
+    box-shadow: none;
+}
+
+/* ── Completion ── */
+
+.complete-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+}
+
+.complete-icon {
+    width: 72px;
+    height: auto;
+    filter: drop-shadow(0 0 12px var(--sucess-color));
+}
+
+.complete-icon.gold-glow {
+    filter: drop-shadow(0 0 14px var(--reward-color));
+}
+
+.complete-sub {
+    font-size: 10px !important;
+    letter-spacing: 0.2em;
+}
+
+.reward-line {
+    color: var(--reward-color);
+    font-weight: bold;
+    font-size: 14px;
+    text-shadow: 0 0 12px var(--glow-gold);
+    letter-spacing: 0.15em;
+}
+
+/* ── Footer ── */
+
+footer {
+    position: fixed;
+    width: 100%;
+    bottom: 0;
+    left: 0;
+    height: 72px;
+    background-color: rgba(7, 9, 15, 0.97);
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -6px 24px var(--glow-blue);
+}
+
+footer nav {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    height: 100%;
+    padding: 0 10px;
+}
+
+footer nav a img {
+    height: 44px;
+    width: 44px;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+    filter: drop-shadow(0 0 6px var(--accent-color));
+}
+
+footer nav a:active img { opacity: 1; }
