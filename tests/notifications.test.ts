@@ -1,6 +1,6 @@
-// notifications.js exposes initNotifications, cancelRemainingTodayNotifications,
+// notifications.ts exposes initNotifications, cancelRemainingTodayNotifications,
 // and _rescheduleIfNewDay (internal, exported only for testing).
-// shared.js is already on global via setup.js.
+// shared.ts is already on global via setup.ts.
 
 const {
   initNotifications,
@@ -8,7 +8,7 @@ const {
   _rescheduleIfNewDay,
   NOTIFICATION_TIMES,
   NOTIFICATION_MESSAGES,
-} = require('../www/js/notifications.js');
+} = require('../src/notifications');
 
 // ── Mock helpers ──────────────────────────────────────────────────────────────
 
@@ -19,12 +19,12 @@ function makePlugin({ requestGranted = true } = {}) {
     schedule:          jest.fn(),
     cancel:            jest.fn(),
   };
-  global.cordova = { plugins: { notification: { local: plugin } } };
+  (global as any).cordova = { plugins: { notification: { local: plugin } } };
   return plugin;
 }
 
 function clearCordova() {
-  delete global.cordova;
+  delete (global as any).cordova;
 }
 
 // ── Setup ─────────────────────────────────────────────────────────────────────
@@ -144,8 +144,7 @@ describe('initNotifications — permission granted, new day', () => {
     jest.setSystemTime(new Date('2025-01-01T00:00:00'));
     makePlugin();
     initNotifications(jest.fn());
-    const scheduled = require('../www/js/notifications.js').NOTIFICATION_TIMES; // just to confirm import
-    const plugin = global.cordova.plugins.notification.local;
+    const plugin = (global as any).cordova.plugins.notification.local;
     const calls = plugin.schedule.mock.calls;
     expect(calls.length).toBe(1);
     const notifs = calls[0][0];
@@ -156,7 +155,7 @@ describe('initNotifications — permission granted, new day', () => {
     jest.setSystemTime(new Date('2025-01-01T00:00:00'));
     makePlugin();
     initNotifications(jest.fn());
-    const notifs = global.cordova.plugins.notification.local.schedule.mock.calls[0][0];
+    const notifs = (global as any).cordova.plugins.notification.local.schedule.mock.calls[0][0];
     const ids = notifs.map(n => n.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
@@ -166,7 +165,7 @@ describe('initNotifications — permission granted, new day', () => {
     jest.setSystemTime(new Date('2025-01-01T14:00:00'));
     makePlugin();
     initNotifications(jest.fn());
-    const notifs = global.cordova.plugins.notification.local.schedule.mock.calls[0][0];
+    const notifs = (global as any).cordova.plugins.notification.local.schedule.mock.calls[0][0];
     expect(notifs.length).toBeLessThan(21);
     // Slot 2 (19:00) of today should still be included
     const todaySlot2At = new Date('2025-01-01T19:00:00').getTime();
@@ -177,7 +176,7 @@ describe('initNotifications — permission granted, new day', () => {
     jest.setSystemTime(new Date('2025-01-01T00:00:00'));
     makePlugin();
     initNotifications(jest.fn());
-    const notifs = global.cordova.plugins.notification.local.schedule.mock.calls[0][0];
+    const notifs = (global as any).cordova.plugins.notification.local.schedule.mock.calls[0][0];
     expect(notifs.every(n => n.title === 'Daily Quest')).toBe(true);
   });
 
@@ -185,7 +184,7 @@ describe('initNotifications — permission granted, new day', () => {
     jest.setSystemTime(new Date('2025-01-01T00:00:00'));
     makePlugin();
     initNotifications(jest.fn());
-    const notifs = global.cordova.plugins.notification.local.schedule.mock.calls[0][0];
+    const notifs = (global as any).cordova.plugins.notification.local.schedule.mock.calls[0][0];
     expect(notifs.every(n => NOTIFICATION_MESSAGES.includes(n.text))).toBe(true);
   });
 });

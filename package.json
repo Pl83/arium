@@ -5,6 +5,9 @@
   "description": "Gamified fitness tracker for Android",
   "main": "index.js",
   "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "build:watch": "tsc --project tsconfig.json --watch",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
@@ -15,13 +18,18 @@
   "author": "Pierre-Louis Sans",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@types/cordova": "^11.0.3",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.7.0",
     "cordova-android": "^15.0.0",
     "cordova-browser": "^7.0.0",
     "cordova-plugin-device": "^3.0.0",
     "cordova-plugin-local-notification": "^1.2.3",
     "cordova-sqlite-storage": "^7.0.0",
     "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0"
+    "jest-environment-jsdom": "^29.7.0",
+    "ts-jest": "^29.4.9",
+    "typescript": "^6.0.3"
   },
   "cordova": {
     "platforms": [

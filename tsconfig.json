@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "none",
+    "ignoreDeprecations": "6.0",
+    "lib": ["ES6", "DOM", "DOM.Iterable"],
+    "outDir": "www/js",
+    "rootDir": "src",
+    "strict": true,
+    "skipLibCheck": true,
+    "typeRoots": ["node_modules/@types", "src/types"],
+    "types": []
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "tests", "www"]
+}

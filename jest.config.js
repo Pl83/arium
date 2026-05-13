@@ -1,19 +1,21 @@
 /** @type {import('jest').Config} */
 module.exports = {
   testEnvironment: 'jest-environment-jsdom',
-  setupFiles: ['<rootDir>/tests/setup.js'],
-  testMatch: ['<rootDir>/tests/**/*.test.js'],
+  setupFiles: ['<rootDir>/tests/setup.ts'],
+  testMatch: ['<rootDir>/tests/**/*.test.ts'],
+  transform: {
+    '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tsconfig.jest.json' }],
+  },
   collectCoverageFrom: [
-    'www/js/shared.js',
-    'www/js/index.js',
-    'www/js/trial.js',
-    'www/js/profil.js',
-    'www/js/notifications.js',
+    'src/shared.ts',
+    'src/index.ts',
+    'src/trial.ts',
+    'src/profil.ts',
+    'src/notifications.ts',
   ],
   coverageReporters: ['text', 'lcov', 'html'],
   coverageDirectory: 'coverage',
   coverageThreshold: {
     global: { lines: 95, branches: 95, functions: 95, statements: 95 },
   },
-  transform: {},
 };

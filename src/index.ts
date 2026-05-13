@@ -5,9 +5,9 @@ document.addEventListener('deviceready', onDeviceReady, false);
 const XP_PER_OBJECTIVE    = 25;
 const XP_PENALTY_PER_MISS = 15;
 
-let db;
+let db!: SQLiteDatabase;
 
-function onDeviceReady() {
+function onDeviceReady(): void {
   db = window.sqlitePlugin.openDatabase({ name: 'fitness.db', location: 'default' });
 
   db.transaction(tx => {
@@ -34,7 +34,7 @@ function onDeviceReady() {
 
 // --- Daily reset ---
 
-function handleDailyReset(callback) {
+function handleDailyReset(callback: () => void): void {
   const today = new Date().toDateString();
   const lastOpened = localStorage.getItem('lastOpened');
   if (lastOpened !== today) {
@@ -45,12 +45,12 @@ function handleDailyReset(callback) {
   }
 }
 
-function checkYesterdayCompletion(next) {
+function checkYesterdayCompletion(next: () => void): void {
   db.transaction(tx => {
     tx.executeSql('SELECT COUNT(*) as total FROM objectives', [], (tx, res) => {
-      const total = res.rows.item(0).total;
-      tx.executeSql('SELECT COUNT(*) as done FROM objectives WHERE completed = 1', [], (tx, res2) => {
-        applyStreakAndPenalty(total, res2.rows.item(0).done);
+      const total = (res.rows.item(0) as { total: number }).total;
+      tx.executeSql('SELECT COUNT(*) as done FROM objectives WHERE completed = 1', [], (_tx, res2) => {
+        applyStreakAndPenalty(total, (res2.rows.item(0) as { done: number }).done);
       });
     });
   }, err => {
@@ -61,24 +61,24 @@ function checkYesterdayCompletion(next) {
   });
 }
 
-function applyStreakAndPenalty(total, done) {
+function applyStreakAndPenalty(total: number, done: number): void {
   if (total === 0) return;
   const streak = parseInt(localStorage.getItem('streak') || '0', 10);
   if (done === total) {
-    localStorage.setItem('streak', streak + 1);
+    localStorage.setItem('streak', String(streak + 1));
   } else {
     const missed  = total - done;
     const penalty = missed * XP_PENALTY_PER_MISS;
-    localStorage.setItem('totalXP', Math.max(0, getTotalXP() - penalty));
-    localStorage.setItem('streak', 0);
+    localStorage.setItem('totalXP', String(Math.max(0, getTotalXP() - penalty)));
+    localStorage.setItem('streak', '0');
     setTimeout(() => showPenaltyModal(missed, penalty), 200);
   }
 }
 
-function showPenaltyModal(missed, penalty) {
-  const overlay = document.getElementById('overlay');
-  const info = document.getElementById('info');
-  const p = info.querySelector('.banner p');
+function showPenaltyModal(missed: number, penalty: number): void {
+  const overlay = document.getElementById('overlay') as HTMLElement;
+  const info = document.getElementById('info') as HTMLElement;
+  const p = info.querySelector('.banner p') as HTMLElement;
   p.textContent = missed + ' objective' + (missed > 1 ? 's' : '') + ' unfinished yesterday. −' + penalty + ' XP. Streak reset.';
   p.className = 'failure';
   overlay.style.display = 'block';
@@ -89,7 +89,7 @@ function showPenaltyModal(missed, penalty) {
   }, { once: true });
 }
 
-function resetObjectives(callback) {
+function resetObjectives(callback: () => void): void {
   const level = getLevel(getTotalXP());
   db.transaction(tx => {
     // Reset completion AND update targets to match current level
@@ -109,11 +109,11 @@ function resetObjectives(callback) {
 
 // --- Seeding ---
 
-function seedInitialObjectives(callback) {
+function seedInitialObjectives(callback?: () => void): void {
   const level = getLevel(getTotalXP());
   db.transaction(tx => {
     tx.executeSql('SELECT COUNT(*) as count FROM objectives', [], (tx, res) => {
-      if (res.rows.item(0).count === 0) {
+      if ((res.rows.item(0) as { count: number }).count === 0) {
         GOAL_CONFIG.forEach(cfg => {
           tx.executeSql('INSERT INTO objectives (title, completed) VALUES (?, ?)', [goalTitle(cfg, level), 0]);
         });
@@ -129,22 +129,22 @@ function seedInitialObjectives(callback) {
 
 // --- XP & level bar ---
 
-function refreshLevelBar() {
+function refreshLevelBar(): void {
   const xp = getTotalXP();
   const progress = getLevelProgress(xp);
-  const bar = document.getElementById('levelProgress');
+  const bar = document.getElementById('levelProgress') as HTMLElement;
   bar.style.width = progress + '%';
   bar.textContent = 'Lv.' + getLevel(xp) + ' — ' + progress + '%';
 }
 
-function updateNameTag() {
+function updateNameTag(): void {
   const xp = getTotalXP();
   const rank = getRank(getLevel(xp));
-  document.getElementById('nameTag').textContent = getPlayerName() + ' — ' + rank.title;
+  (document.getElementById('nameTag') as HTMLElement).textContent = getPlayerName() + ' — ' + rank.title;
 }
 
-function animateBar(fromPct, toPct, onDone) {
-  const bar = document.getElementById('levelProgress');
+function animateBar(fromPct: number, toPct: number, onDone?: () => void): void {
+  const bar = document.getElementById('levelProgress') as HTMLElement;
   let width = fromPct;
   const id = setInterval(() => {
     if (width >= toPct) {
@@ -162,17 +162,23 @@ function animateBar(fromPct, toPct, onDone) {
 
 // --- Objectives UI ---
 
-function init() {
-  const list = document.querySelector('.center ul');
+interface ObjectiveRow {
+  id: number;
+  title: string;
+  completed: number;
+}
+
+function init(): void {
+  const list = document.querySelector('.center ul') as HTMLUListElement;
   list.innerHTML = '';
 
   db.transaction(tx => {
-    tx.executeSql('SELECT * FROM objectives', [], (tx, res) => {
+    tx.executeSql('SELECT * FROM objectives', [], (_tx, res) => {
       let completedCount = 0;
       const total = res.rows.length;
 
       for (let i = 0; i < res.rows.length; i++) {
-        const obj = res.rows.item(i);
+        const obj = res.rows.item(i) as unknown as ObjectiveRow;
         if (obj.completed) completedCount++;
 
         const li = document.createElement('li');
@@ -205,17 +211,17 @@ function init() {
           }, () => {
             const oldXP = getTotalXP();
             const newXP = Math.max(0, oldXP + xpDelta);
-            localStorage.setItem('totalXP', newXP);
+            localStorage.setItem('totalXP', String(newXP));
 
             if (xpDelta > 0) {
               const done = parseInt(localStorage.getItem('totalCompleted') || '0', 10);
-              localStorage.setItem('totalCompleted', done + 1);
+              localStorage.setItem('totalCompleted', String(done + 1));
               incrementStat(statForTitle(obj.title));
             }
 
             const oldProgress = getLevelProgress(oldXP);
             const newProgress = getLevelProgress(newXP);
-            const bar = document.getElementById('levelProgress');
+            const bar = document.getElementById('levelProgress') as HTMLElement;
 
             if (xpDelta > 0 && getLevel(newXP) > getLevel(oldXP)) {
               animateBar(oldProgress, 100, () => {
@@ -239,7 +245,7 @@ function init() {
         list.appendChild(li);
       }
 
-      const popup = document.querySelector('.popup');
+      const popup = document.querySelector('.popup') as HTMLElement;
       if (total > 0 && completedCount === total) {
         popup.classList.add('quest-complete');
         cancelRemainingTodayNotifications();
@@ -253,7 +259,7 @@ function init() {
 // === NODE/JEST EXPORT — invisible in browser ===
 /* istanbul ignore else */
 if (typeof module !== 'undefined') {
-  global._setDb                   = (mockDb) => { db = mockDb; };
+  global._setDb                   = (mockDb: SQLiteDatabase) => { db = mockDb; };
   global.onDeviceReady            = onDeviceReady;
   global.handleDailyReset         = handleDailyReset;
   global.checkYesterdayCompletion = checkYesterdayCompletion;
