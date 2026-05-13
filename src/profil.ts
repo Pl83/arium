@@ -1,6 +1,6 @@
 // shared.js must be loaded before this file
 
-function render() {
+function render(): void {
   const xp = getTotalXP();
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
@@ -10,22 +10,22 @@ function render() {
   const stats = getStats();
 
   // Name
-  document.getElementById('nameTag').textContent = getPlayerName();
+  (document.getElementById('nameTag') as HTMLElement).textContent = getPlayerName();
 
   // Rank badge
-  document.getElementById('rankLetter').textContent = rank.rank;
-  document.getElementById('rankTitle').textContent = rank.title;
+  (document.getElementById('rankLetter') as HTMLElement).textContent = rank.rank;
+  (document.getElementById('rankTitle') as HTMLElement).textContent = rank.title;
 
   // Level
-  document.getElementById('profileLevel').textContent = level;
-  const bar = document.getElementById('profileLevelProgress');
+  (document.getElementById('profileLevel') as HTMLElement).textContent = String(level);
+  const bar = document.getElementById('profileLevelProgress') as HTMLElement;
   bar.style.width = progress + '%';
   bar.textContent = progress + '%';
 
   // General stats
-  document.getElementById('streakCount').textContent = streak + (streak === 1 ? ' day' : ' days');
-  document.getElementById('totalXPDisplay').textContent = xp + ' xp';
-  document.getElementById('totalCompleted').textContent = totalCompleted;
+  (document.getElementById('streakCount') as HTMLElement).textContent = streak + (streak === 1 ? ' day' : ' days');
+  (document.getElementById('totalXPDisplay') as HTMLElement).textContent = xp + ' xp';
+  (document.getElementById('totalCompleted') as HTMLElement).textContent = String(totalCompleted);
 
   // Attribute bars
   STAT_KEYS.forEach(key => {
@@ -34,15 +34,15 @@ function render() {
     const fillEl = document.getElementById('bar-' + key);
     const valEl  = document.getElementById('val-' + key);
     /* istanbul ignore else */ if (fillEl) fillEl.style.width = pct + '%';
-    /* istanbul ignore else */ if (valEl)  valEl.textContent = val;
+    /* istanbul ignore else */ if (valEl)  valEl.textContent = String(val);
   });
 }
 
 // --- Editable name ---
 
-document.getElementById('editNameBtn').addEventListener('click', () => {
-  const nameTag = document.getElementById('nameTag');
-  const editBtn = document.getElementById('editNameBtn');
+document.getElementById('editNameBtn')!.addEventListener('click', () => {
+  const nameTag = document.getElementById('nameTag') as HTMLElement;
+  const editBtn = document.getElementById('editNameBtn') as HTMLElement;
   const current = getPlayerName();
 
   nameTag.style.display = 'none';
@@ -58,13 +58,13 @@ document.getElementById('editNameBtn').addEventListener('click', () => {
   saveBtn.textContent = '✓';
   saveBtn.className = 'save-name-btn';
 
-  const nameSection = document.getElementById('nameSection');
+  const nameSection = document.getElementById('nameSection') as HTMLElement;
   nameSection.appendChild(input);
   nameSection.appendChild(saveBtn);
   input.focus();
   input.select();
 
-  function save() {
+  function save(): void {
     const newName = input.value.trim() || 'Hunter';
     localStorage.setItem('playerName', newName);
     nameTag.textContent = newName;

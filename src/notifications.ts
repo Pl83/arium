@@ -1,13 +1,12 @@
-// shared.js must be loaded before this file (provides nothing directly, but
-// index.js depends on both being loaded first for the deviceready chain).
+// shared.js must be loaded before this file
 
-const NOTIFICATION_TIMES = [
+const NOTIFICATION_TIMES: NotificationTime[] = [
   { hour: 8,  minute: 0  }, // Slot 0 — morning
   { hour: 13, minute: 0  }, // Slot 1 — afternoon
   { hour: 19, minute: 0  }, // Slot 2 — evening
 ];
 
-const NOTIFICATION_MESSAGES = [
+const NOTIFICATION_MESSAGES: string[] = [
   'Daily quest active. Report to the training ground, Hunter.',
   'Your rank demands discipline. Complete today\'s objectives.',
   'Strength doesn\'t level up by itself. Time to grind.',
@@ -25,14 +24,12 @@ const NOTIFICATION_MESSAGES = [
   'Quest incomplete. Your next rank won\'t wait for you.',
 ];
 
-function _getPlugin() {
-  return typeof cordova !== 'undefined'
-      && cordova.plugins
-      && cordova.plugins.notification
-      && cordova.plugins.notification.local;
+function _getPlugin(): LocalNotificationPlugin | null {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return ((window as any).cordova?.plugins?.notification?.local as LocalNotificationPlugin | undefined) ?? null;
 }
 
-function _rescheduleIfNewDay() {
+function _rescheduleIfNewDay(): void {
   const today = new Date().toDateString();
   if (localStorage.getItem('lastNotificationsScheduled') === today) return;
 
@@ -42,10 +39,10 @@ function _rescheduleIfNewDay() {
   plugin.cancelAll(function() {
     const rawOffset = parseInt(localStorage.getItem('notifMsgOffset') || '0', 10);
     const offset = (rawOffset + 3) % NOTIFICATION_MESSAGES.length;
-    localStorage.setItem('notifMsgOffset', offset);
+    localStorage.setItem('notifMsgOffset', String(offset));
     localStorage.setItem('lastNotificationsScheduled', today);
 
-    const notifications = [];
+    const notifications: LocalNotification[] = [];
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const now = new Date();
@@ -72,7 +69,7 @@ function _rescheduleIfNewDay() {
   });
 }
 
-function initNotifications(callback) {
+function initNotifications(callback: () => void): void {
   const plugin = _getPlugin();
   if (!plugin) { callback(); return; }
 
@@ -82,7 +79,7 @@ function initNotifications(callback) {
   });
 }
 
-function cancelRemainingTodayNotifications() {
+function cancelRemainingTodayNotifications(): void {
   const plugin = _getPlugin();
   if (!plugin) return;
 
@@ -91,7 +88,7 @@ function cancelRemainingTodayNotifications() {
   todayStart.setHours(0, 0, 0, 0);
   const dayOffset = Math.floor(todayStart.getTime() / 86400000);
 
-  const ids = [];
+  const ids: number[] = [];
   NOTIFICATION_TIMES.forEach(function(t, slot) {
     const fireAt = new Date(todayStart);
     fireAt.setHours(t.hour, t.minute, 0, 0);

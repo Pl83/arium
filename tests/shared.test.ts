@@ -1,4 +1,4 @@
-// shared.js is already loaded by tests/setup.js — all functions are on global
+// shared.ts is already loaded by tests/setup.ts — all functions are on global
 beforeEach(() => {
   localStorage.clear();
   jest.clearAllMocks();
@@ -8,7 +8,7 @@ const {
   goalTarget, goalTitle, getLevel, getLevelProgress, getRank,
   statForTitle, getTotalXP, getPlayerName, getStats, incrementStat,
   GOAL_CONFIG,
-} = require('../www/js/shared.js');
+} = require('../src/shared');
 
 // ── goalTarget ────────────────────────────────────────────────────────────────
 

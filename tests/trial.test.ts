@@ -1,10 +1,10 @@
-// shared.js is already on global via setup.js
-const trialModule = require('../www/js/trial.js');
+// shared.ts is already on global via setup.ts
+const trialModule = require('../src/trial');
 const { getS, setS } = trialModule;
 
-const PUSHUP_EX      = global.SOLO_EXERCISES[0]; // Push-Ups, cfgIdx:0, reps
-const PLANK_EX       = global.SOLO_EXERCISES[3]; // Plank, cfgIdx:3, time
-const CORE_CHALLENGE = global.CHALLENGES[0];      // Core Challenge
+const PUSHUP_EX      = (global as any).SOLO_EXERCISES[0]; // Push-Ups, cfgIdx:0, reps
+const PLANK_EX       = (global as any).SOLO_EXERCISES[3]; // Plank, cfgIdx:3, time
+const CORE_CHALLENGE = (global as any).CHALLENGES[0];      // Core Challenge
 
 function setupDOM() {
   document.body.innerHTML = '<main class="app"></main>';
@@ -148,14 +148,14 @@ describe('showExerciseList', () => {
   it('renders one exercise card per SOLO_EXERCISES entry', () => {
     trialModule.showExerciseList();
     expect(document.querySelectorAll('.exercise-card').length)
-      .toBe(global.SOLO_EXERCISES.length);
+      .toBe((global as any).SOLO_EXERCISES.length);
   });
 
   it('switches to challenge cards when Challenges tab is clicked', () => {
     trialModule.showExerciseList();
     document.querySelectorAll('.tab-btn')[1].click(); // Challenges tab
     expect(document.querySelectorAll('.challenge-card').length)
-      .toBe(global.CHALLENGES.length);
+      .toBe((global as any).CHALLENGES.length);
   });
 
   it('switches back to exercise cards when Solo tab is clicked', () => {
@@ -225,7 +225,7 @@ describe('showConfigure', () => {
   it('shows "Duration" label and fmt display when exercise is timed', () => {
     trialModule.showConfigure(PLANK_EX);
     const labels = Array.from(document.querySelectorAll('.config-label'));
-    expect(labels.some(el => el.textContent === 'Duration')).toBe(true);
+    expect(labels.some((el: any) => el.textContent === 'Duration')).toBe(true);
   });
 
   it('does not decrement target below ex.min', () => {
@@ -288,16 +288,16 @@ describe('showChallengeDetail', () => {
   });
 
   it('shows fmt-formatted duration for timed exercises in the exercise list', () => {
-    const CARDIO_BLAST = global.CHALLENGES[3];
+    const CARDIO_BLAST = (global as any).CHALLENGES[3];
     trialModule.showChallengeDetail(CARDIO_BLAST);
     const targets = Array.from(document.querySelectorAll('.ex-target'));
     // Mt. Climbers and Jumping Jacks are timed — their labels should contain 's' or ':'
-    expect(targets.some(el => el.textContent.includes('s') || el.textContent.includes(':'))).toBe(true);
+    expect(targets.some((el: any) => el.textContent.includes('s') || el.textContent.includes(':'))).toBe(true);
   });
 
   it('Start Challenge with timed first exercise shows the timer screen', () => {
     // Cardio Blast starts with Burpees (reps), but skip to Mt. Climbers (time) via rest
-    const CARDIO_BLAST = global.CHALLENGES[3];
+    const CARDIO_BLAST = (global as any).CHALLENGES[3];
     setS({
       mode: 'challenge', challenge: CARDIO_BLAST,
       rounds: 1, currentRound: 1, exIdx: 1, // Mt. Climbers (time)
@@ -486,7 +486,7 @@ describe('showChallengeRest', () => {
 
   it('shows fmt-formatted duration when next exercise is timed', () => {
     localStorage.setItem('totalXP', '0');
-    const CARDIO_BLAST = global.CHALLENGES[3]; // Cardio Blast: Mt. Climbers is time
+    const CARDIO_BLAST = (global as any).CHALLENGES[3]; // Cardio Blast: Mt. Climbers is time
     setS({
       mode: 'challenge', challenge: CARDIO_BLAST,
       rounds: 1, currentRound: 1, exIdx: 1, // Mt. Climbers (time)
