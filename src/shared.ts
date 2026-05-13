@@ -2,7 +2,7 @@
 
 const XP_PER_LEVEL = 100;
 
-const RANKS = [
+const RANKS: RankEntry[] = [
   { minLevel:  1, rank: 'E', title: 'Novice'     },
   { minLevel:  5, rank: 'D', title: 'Apprentice'  },
   { minLevel: 10, rank: 'C', title: 'Warrior'     },
@@ -12,38 +12,38 @@ const RANKS = [
 ];
 
 // Goal scaling: target = min(cap, base + (level - 1) * step)
-const GOAL_CONFIG = [
+const GOAL_CONFIG: GoalConfig[] = [
   { name: 'Push-Ups', base: 20, step: 2, cap: 100 },
   { name: 'Sit-Ups',  base: 20, step: 2, cap: 100 },
   { name: 'Squats',   base: 20, step: 2, cap: 100 },
   { name: 'Plank',    base: 30, step: 5,  cap: 300 },
 ];
 
-function goalTarget(cfg, level) {
+function goalTarget(cfg: { base: number; step: number; cap: number }, level: number): number {
   return Math.min(cfg.cap, cfg.base + (level - 1) * cfg.step);
 }
 
-function goalTitle(cfg, level) {
+function goalTitle(cfg: GoalConfig, level: number): string {
   return cfg.name + ' [0/' + goalTarget(cfg, level) + ']';
 }
 
-const STAT_KEYS = ['strength', 'core', 'power', 'endurance'];
-const STAT_LABELS = { strength: 'Strength', core: 'Core', power: 'Power', endurance: 'Endurance' };
+const STAT_KEYS: StatKey[] = ['strength', 'core', 'power', 'endurance'];
+const STAT_LABELS: Record<StatKey, string> = { strength: 'Strength', core: 'Core', power: 'Power', endurance: 'Endurance' };
 const STAT_SOFT_CAP = 50;
 
-function getTotalXP() {
+function getTotalXP(): number {
   return parseInt(localStorage.getItem('totalXP') || '0', 10);
 }
 
-function getLevel(xp) {
+function getLevel(xp: number): number {
   return Math.floor(xp / XP_PER_LEVEL) + 1;
 }
 
-function getLevelProgress(xp) {
+function getLevelProgress(xp: number): number {
   return xp % XP_PER_LEVEL;
 }
 
-function getRank(level) {
+function getRank(level: number): RankEntry {
   let current = RANKS[0];
   for (const r of RANKS) {
     if (level >= r.minLevel) current = r;
@@ -51,16 +51,16 @@ function getRank(level) {
   return current;
 }
 
-function getPlayerName() {
+function getPlayerName(): string {
   return localStorage.getItem('playerName') || 'Hunter';
 }
 
-function getStats() {
-  try { return JSON.parse(localStorage.getItem('stats') || '{}'); }
-  catch (e) { return {}; }
+function getStats(): Partial<StatMap> {
+  try { return JSON.parse(localStorage.getItem('stats') || '{}') as Partial<StatMap>; }
+  catch { return {}; }
 }
 
-function statForTitle(title) {
+function statForTitle(title: string): StatKey | null {
   const t = title.toLowerCase();
   if (t.includes('push'))  return 'strength';
   if (t.includes('sit'))   return 'core';
@@ -69,7 +69,7 @@ function statForTitle(title) {
   return null;
 }
 
-function incrementStat(statName) {
+function incrementStat(statName: StatKey | null): void {
   if (!statName) return;
   const stats = getStats();
   stats[statName] = (stats[statName] || 0) + 1;

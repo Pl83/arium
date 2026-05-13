@@ -3,8 +3,9 @@
     <name>Arium</name>
     <description>Gamified fitness tracker</description>
     <author email="pierre.louis.sans@gmail.com">
-        Pilou
+        Pierre-Louis
     </author>
+    <icon src="www/img/logo.png" />
     <content src="index.html" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />

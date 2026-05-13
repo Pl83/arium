@@ -33,3 +33,7 @@ node_modules/
 
 # Jest coverage output
 coverage/
+
+# TypeScript compiled output
+www/js/
+.ts-jest-out/

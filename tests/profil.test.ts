@@ -1,5 +1,5 @@
-// shared.js is already on global via setup.js
-// profil.js runs editNameBtn listener + render() at load time, so the DOM
+// shared.ts is already on global via setup.ts
+// profil.ts runs editNameBtn listener + render() at load time, so the DOM
 // fixture must be built BEFORE require() — use jest.resetModules() in beforeEach.
 
 const PROFIL_DOM = `
@@ -19,15 +19,15 @@ const PROFIL_DOM = `
   <div id="bar-endurance" style="width:0%"></div><span id="val-endurance">0</span>
 `;
 
-let profilModule;
+let profilModule: any;
 
 beforeEach(() => {
   localStorage.clear();
   jest.clearAllMocks();
   document.body.innerHTML = PROFIL_DOM;
   jest.resetModules();
-  require('../www/js/shared.js');
-  profilModule = require('../www/js/profil.js');
+  require('../src/shared');
+  profilModule = require('../src/profil');
 });
 
 // ── render ────────────────────────────────────────────────────────────────────
@@ -130,7 +130,7 @@ describe('editNameBtn', () => {
 
   it('saves the new name and restores UI on save button click', () => {
     document.getElementById('editNameBtn').click();
-    document.querySelector('.name-input').value = 'Nero';
+    (document.querySelector('.name-input') as HTMLInputElement).value = 'Nero';
     document.querySelector('.save-name-btn').click();
     expect(localStorage.getItem('playerName')).toBe('Nero');
     expect(document.getElementById('nameTag').textContent).toBe('Nero');
@@ -140,7 +140,7 @@ describe('editNameBtn', () => {
 
   it('saves the name on Enter key', () => {
     document.getElementById('editNameBtn').click();
-    const input = document.querySelector('.name-input');
+    const input = document.querySelector('.name-input') as HTMLInputElement;
     input.value = 'Selene';
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     expect(localStorage.getItem('playerName')).toBe('Selene');
@@ -148,7 +148,7 @@ describe('editNameBtn', () => {
 
   it('defaults to "Hunter" when input is empty or whitespace', () => {
     document.getElementById('editNameBtn').click();
-    document.querySelector('.name-input').value = '   ';
+    (document.querySelector('.name-input') as HTMLInputElement).value = '   ';
     document.querySelector('.save-name-btn').click();
     expect(localStorage.getItem('playerName')).toBe('Hunter');
   });
@@ -162,7 +162,7 @@ describe('editNameBtn', () => {
 
   it('does not save on non-Enter key presses', () => {
     document.getElementById('editNameBtn').click();
-    const input = document.querySelector('.name-input');
+    const input = document.querySelector('.name-input') as HTMLInputElement;
     input.value = 'Phantom';
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
     expect(localStorage.getItem('playerName')).toBeNull();

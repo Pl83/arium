@@ -9,12 +9,12 @@ const TRANSITION_SECONDS  = 15;
 
 // ── Exercise catalogue ────────────────────────────────────────────────────
 
-function exScale(ex, level) {
-  const cfg = ex.cfgIdx !== undefined ? GOAL_CONFIG[ex.cfgIdx] : ex.scale;
+function exScale(ex: BaseExercise, level: number): number {
+  const cfg = ex.cfgIdx !== undefined ? GOAL_CONFIG[ex.cfgIdx] : ex.scale!;
   return goalTarget(cfg, level);
 }
 
-const SOLO_EXERCISES = [
+const SOLO_EXERCISES: Exercise[] = [
   { name: 'Push-Ups',     type: 'reps', cfgIdx: 0, step: 5,  min: 5,  stat: 'strength' },
   { name: 'Sit-Ups',      type: 'reps', cfgIdx: 1, step: 5,  min: 5,  stat: 'core'     },
   { name: 'Squats',       type: 'reps', cfgIdx: 2, step: 5,  min: 5,  stat: 'power'    },
@@ -26,7 +26,7 @@ const SOLO_EXERCISES = [
   { name: 'Mt. Climbers', type: 'time', scale: { base: 20, step: 3, cap: 75 }, step: 5,  min: 10, stat: 'endurance' },
 ];
 
-const CHALLENGES = [
+const CHALLENGES: Challenge[] = [
   {
     name: 'Core Challenge',
     stat: 'core',
@@ -67,11 +67,11 @@ const CHALLENGES = [
 
 // ── State ─────────────────────────────────────────────────────────────────
 
-let s = {};
-let clock = null;
+let s: TrialState = {} as SoloState;
+let clock: ReturnType<typeof setInterval> | null = null;
 let activeTab = 'solo';
 
-function resetSoloState(ex) {
+function resetSoloState(ex: Exercise): void {
   clearClock();
   const level = getLevel(getTotalXP());
   s = {
@@ -86,7 +86,7 @@ function resetSoloState(ex) {
   };
 }
 
-function resetChallengeState(ch) {
+function resetChallengeState(ch: Challenge): void {
   clearClock();
   const level   = getLevel(getTotalXP());
   const firstEx = ch.exercises[0];
@@ -106,41 +106,43 @@ function resetChallengeState(ch) {
   };
 }
 
-function clearClock() {
-  clearInterval(clock);
+function clearClock(): void {
+  if (clock !== null) clearInterval(clock);
   clock = null;
 }
 
 // ── DOM helpers ───────────────────────────────────────────────────────────
 
-function main() { return document.querySelector('.app'); }
+function main(): Element {
+  return document.querySelector('.app') as Element;
+}
 
-function make(tag, cls, text) {
+function make(tag: string, cls?: string, text?: string): HTMLElement {
   const e = document.createElement(tag);
   /* istanbul ignore else */ if (cls)  e.className = cls;
   if (text !== undefined) e.textContent = text;
   return e;
 }
 
-function btn(text, cls, fn) {
-  const b = make('button', cls, text);
+function btn(text: string, cls: string, fn: () => void): HTMLButtonElement {
+  const b = make('button', cls, text) as HTMLButtonElement;
   b.addEventListener('click', fn);
   return b;
 }
 
-function fmt(sec) {
+function fmt(sec: number): string {
   const m = Math.floor(sec / 60), s2 = sec % 60;
   return m > 0 ? m + ':' + (s2 < 10 ? '0' : '') + s2 : sec + 's';
 }
 
-function calcSoloXP()      { return XP_BASE_TRIAL     + s.setsCompleted * XP_PER_SET;          }
-function calcChallengeXP() { return XP_BASE_CHALLENGE  + s.setsCompleted * XP_PER_CHALLENGE_EX; }
+function calcSoloXP(): number      { return XP_BASE_TRIAL     + s.setsCompleted * XP_PER_SET;          }
+function calcChallengeXP(): number { return XP_BASE_CHALLENGE  + s.setsCompleted * XP_PER_CHALLENGE_EX; }
 
 // ── Screen 1 · Picker (Solo / Challenges tabs) ────────────────────────────
 
-function showExerciseList() {
+function showExerciseList(): void {
   clearClock();
-  s = {};
+  s = {} as SoloState;
   const m = main();
   m.innerHTML = '';
 
@@ -195,7 +197,7 @@ function showExerciseList() {
 
 // ── Screen 2a · Configure solo ────────────────────────────────────────────
 
-function showConfigure(ex) {
+function showConfigure(ex: Exercise): void {
   resetSoloState(ex);
   const m = main();
   m.innerHTML = '';
@@ -225,7 +227,7 @@ function showConfigure(ex) {
   m.appendChild(btn('Back',        'trial-btn secondary', showExerciseList));
 }
 
-function stepper(label, valId, getVal, onMinus, onPlus) {
+function stepper(label: string, valId: string, getVal: () => string | number, onMinus: () => void, onPlus: () => void): HTMLElement {
   const row = make('div', 'config-row');
   row.innerHTML =
     '<span class="config-label">' + label + '</span>' +
@@ -239,18 +241,19 @@ function stepper(label, valId, getVal, onMinus, onPlus) {
   return row;
 }
 
-function refreshConfig() {
+function refreshConfig(): void {
+  if (s.mode !== 'solo') return;
   const setsEl   = document.getElementById('sets-val');
   const targetEl = document.getElementById('target-val');
   const xpEl     = document.getElementById('xp-preview');
-  /* istanbul ignore else */ if (setsEl)   setsEl.textContent   = s.sets;
-  /* istanbul ignore else */ if (targetEl) targetEl.textContent = s.ex.type === 'reps' ? s.target : fmt(s.target);
+  /* istanbul ignore else */ if (setsEl)   setsEl.textContent   = String(s.sets);
+  /* istanbul ignore else */ if (targetEl) targetEl.textContent = s.ex.type === 'reps' ? String(s.target) : fmt(s.target);
   /* istanbul ignore else */ if (xpEl)     xpEl.textContent     = 'Reward: ' + (XP_BASE_TRIAL + s.sets * XP_PER_SET) + ' XP';
 }
 
 // ── Screen 2b · Challenge detail ──────────────────────────────────────────
 
-function showChallengeDetail(ch) {
+function showChallengeDetail(ch: Challenge): void {
   resetChallengeState(ch);
   const level = getLevel(getTotalXP());
   const m = main();
@@ -272,9 +275,9 @@ function showChallengeDetail(ch) {
 
   const form = make('div', 'config-form');
   form.appendChild(stepper('Rounds', 'rounds-val',
-    () => s.rounds,
-    () => { if (s.rounds > 1) { s.rounds--; refreshChallengeConfig(); } },
-    () => { if (s.rounds < 3) { s.rounds++; refreshChallengeConfig(); } }
+    () => (s as ChallengeState).rounds,
+    () => { if ((s as ChallengeState).rounds > 1) { (s as ChallengeState).rounds--; refreshChallengeConfig(); } },
+    () => { if ((s as ChallengeState).rounds < 3) { (s as ChallengeState).rounds++; refreshChallengeConfig(); } }
   ));
   m.appendChild(form);
 
@@ -287,10 +290,11 @@ function showChallengeDetail(ch) {
   m.appendChild(btn('Back',            'trial-btn secondary', showExerciseList));
 }
 
-function refreshChallengeConfig() {
+function refreshChallengeConfig(): void {
+  if (s.mode !== 'challenge') return;
   const roundsEl = document.getElementById('rounds-val');
   const xpEl     = document.getElementById('ch-xp-preview');
-  /* istanbul ignore else */ if (roundsEl) roundsEl.textContent = s.rounds;
+  /* istanbul ignore else */ if (roundsEl) roundsEl.textContent = String(s.rounds);
   /* istanbul ignore else */ if (xpEl) {
     const totalExs = s.rounds * s.challenge.exercises.length;
     xpEl.textContent = 'Reward: ' + (XP_BASE_CHALLENGE + totalExs * XP_PER_CHALLENGE_EX) + ' XP';
@@ -299,26 +303,28 @@ function refreshChallengeConfig() {
 
 // ── Solo workout ──────────────────────────────────────────────────────────
 
-function startSolo() {
+function startSolo(): void {
   s.currentSet    = 1;
   s.setsCompleted = 0;
   beginSet();
 }
 
-function beginSet() {
+function beginSet(): void {
   s.ex.type === 'time' ? showTimedSet() : showRepSet();
 }
 
 // ── Challenge workout ─────────────────────────────────────────────────────
 
-function startChallenge() {
+function startChallenge(): void {
+  if (s.mode !== 'challenge') return;
   s.currentRound  = 1;
   s.exIdx         = 0;
   s.setsCompleted = 0;
   beginChallengeExercise();
 }
 
-function beginChallengeExercise() {
+function beginChallengeExercise(): void {
+  if (s.mode !== 'challenge') return;
   const level = getLevel(getTotalXP());
   const ex    = s.challenge.exercises[s.exIdx];
   s.ex        = ex;
@@ -330,7 +336,7 @@ function beginChallengeExercise() {
 
 // ── Screen 3a · Reps ──────────────────────────────────────────────────────
 
-function showRepSet() {
+function showRepSet(): void {
   s.reps = 0;
   const m = main();
   m.innerHTML = '';
@@ -364,13 +370,13 @@ function showRepSet() {
   m.appendChild(btn('Abandon',  'trial-btn secondary', () => { clearClock(); showExerciseList(); }));
 }
 
-function onRepTap(e) {
-  if (e.type === 'click' && e.target.tagName === 'BUTTON') return;
+function onRepTap(e: MouseEvent | TouchEvent): void {
+  if (e.type === 'click' && (e.target as HTMLElement).tagName === 'BUTTON') return;
   if (s.reps >= s.target) return;
   s.reps++;
   const numEl = document.getElementById('rep-num');
   /* istanbul ignore else */ if (numEl) {
-    numEl.textContent = s.reps;
+    numEl.textContent = String(s.reps);
     numEl.classList.remove('rep-bump');
     void numEl.offsetWidth;
     numEl.classList.add('rep-bump');
@@ -384,7 +390,7 @@ function onRepTap(e) {
 
 // ── Screen 3b · Timed ─────────────────────────────────────────────────────
 
-function showTimedSet() {
+function showTimedSet(): void {
   clearClock();
   s.timeLeft = s.target;
   const m = main();
@@ -418,7 +424,7 @@ function showTimedSet() {
 
 // ── Set / exercise completion ──────────────────────────────────────────────
 
-function finishSet() {
+function finishSet(): void {
   clearClock();
   s.setsCompleted++;
   if (s.ex.stat) incrementStat(s.ex.stat);
@@ -446,7 +452,7 @@ function finishSet() {
 
 // ── Screen 4a · Solo rest ─────────────────────────────────────────────────
 
-function showRest() {
+function showRest(): void {
   let restLeft = REST_SECONDS;
   const m = main();
   m.innerHTML = '';
@@ -472,7 +478,8 @@ function showRest() {
 
 // ── Screen 4b · Challenge rest (between exercises) ────────────────────────
 
-function showChallengeRest() {
+function showChallengeRest(): void {
+  if (s.mode !== 'challenge') return;
   let restLeft  = TRANSITION_SECONDS;
   const level   = getLevel(getTotalXP());
   const nextEx  = s.challenge.exercises[s.exIdx];
@@ -503,7 +510,8 @@ function showChallengeRest() {
 
 // ── Screen 4c · Round complete ────────────────────────────────────────────
 
-function showRoundComplete() {
+function showRoundComplete(): void {
+  if (s.mode !== 'challenge') return;
   let restLeft = REST_SECONDS;
   const m = main();
   m.innerHTML = '';
@@ -529,16 +537,18 @@ function showRoundComplete() {
 
 // ── Screen 5a · Solo complete ─────────────────────────────────────────────
 
-function showComplete() {
+function showComplete(): void {
+  if (s.mode !== 'solo') return;
   clearClock();
   const xpActual = XP_BASE_TRIAL + s.setsCompleted * XP_PER_SET;
-  localStorage.setItem('totalXP', getTotalXP() + xpActual);
+  localStorage.setItem('totalXP', String(getTotalXP() + xpActual));
   const done = parseInt(localStorage.getItem('totalCompleted') || '0', 10);
-  localStorage.setItem('totalCompleted', done + s.setsCompleted);
+  localStorage.setItem('totalCompleted', String(done + s.setsCompleted));
 
   const summary = s.setsCompleted + ' set' + (s.setsCompleted > 1 ? 's' : '') +
     ' × ' + (s.ex.type === 'reps' ? s.target + ' reps' : fmt(s.target));
 
+  const savedEx = s.ex;
   const m = main();
   m.innerHTML =
     '<div class="complete-card">' +
@@ -550,18 +560,19 @@ function showComplete() {
       '<button id="menu-btn"  class="trial-btn secondary">Menu</button>' +
     '</div>';
 
-  document.getElementById('again-btn').addEventListener('click', () => showConfigure(s.ex));
-  document.getElementById('menu-btn').addEventListener('click', showExerciseList);
+  document.getElementById('again-btn')!.addEventListener('click', () => showConfigure(savedEx));
+  document.getElementById('menu-btn')!.addEventListener('click', showExerciseList);
 }
 
 // ── Screen 5b · Challenge complete ───────────────────────────────────────
 
-function showChallengeComplete() {
+function showChallengeComplete(): void {
+  if (s.mode !== 'challenge') return;
   clearClock();
   const xpActual = XP_BASE_CHALLENGE + s.setsCompleted * XP_PER_CHALLENGE_EX;
-  localStorage.setItem('totalXP', getTotalXP() + xpActual);
+  localStorage.setItem('totalXP', String(getTotalXP() + xpActual));
   const done = parseInt(localStorage.getItem('totalCompleted') || '0', 10);
-  localStorage.setItem('totalCompleted', done + s.setsCompleted);
+  localStorage.setItem('totalCompleted', String(done + s.setsCompleted));
 
   const summary = s.rounds + ' round' + (s.rounds > 1 ? 's' : '') +
     '  ·  ' + s.challenge.exercises.length + ' exercises';
@@ -579,8 +590,8 @@ function showChallengeComplete() {
       '<button id="menu-btn"  class="trial-btn secondary">Menu</button>' +
     '</div>';
 
-  document.getElementById('again-btn').addEventListener('click', () => showChallengeDetail(savedChallenge));
-  document.getElementById('menu-btn').addEventListener('click', showExerciseList);
+  document.getElementById('again-btn')!.addEventListener('click', () => showChallengeDetail(savedChallenge));
+  document.getElementById('menu-btn')!.addEventListener('click', showExerciseList);
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────
@@ -619,6 +630,6 @@ if (typeof module !== 'undefined') {
     showChallengeDetail, showRepSet, showTimedSet, showRest, showChallengeRest,
     showRoundComplete, showComplete, showChallengeComplete, finishSet, onRepTap,
     getS: () => s,
-    setS: (val) => { s = val; },
+    setS: (val: TrialState) => { s = val; },
   };
 }
