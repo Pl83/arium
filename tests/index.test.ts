@@ -7,7 +7,14 @@ const INDEX_DOM = `
   <div id="nameTag"></div>
   <div id="overlay" style="display:none;"></div>
   <div id="info" style="display:none;">
-    <div class="banner"><p></p></div>
+    <div class="banner">
+      <div class="alert"><h2>Alert</h2></div>
+      <p></p>
+    </div>
+  </div>
+  <div id="name-setup" style="display:none;">
+    <input id="name-setup-input" type="text">
+    <button id="name-setup-btn"></button>
   </div>
   <main class="app">
     <div class="center"><ul></ul></div>
@@ -17,6 +24,8 @@ const INDEX_DOM = `
 
 beforeEach(() => {
   localStorage.clear();
+  // Skip the first-run name setup in all existing tests
+  localStorage.setItem('playerName', 'TestHunter');
   jest.clearAllMocks();
   jest.useFakeTimers();
   document.body.innerHTML = INDEX_DOM;
@@ -51,6 +60,67 @@ describe('onDeviceReady', () => {
     const { mockDb } = createSQLiteMock({ failOn: true });
     (window as any).sqlitePlugin = { openDatabase: jest.fn(() => mockDb) };
     expect(() => (global as any).onDeviceReady()).not.toThrow();
+  });
+});
+
+// ── maybeShowNameSetup ────────────────────────────────────────────────────────
+
+describe('maybeShowNameSetup', () => {
+  it('calls callback immediately when playerName is already set', () => {
+    localStorage.setItem('playerName', 'Aria');
+    const cb = jest.fn();
+    (global as any).maybeShowNameSetup(cb);
+    expect(cb).toHaveBeenCalledTimes(1);
+    expect(document.getElementById('name-setup')!.style.display).toBe('none');
+  });
+
+  it('shows the overlay when playerName is not set', () => {
+    localStorage.removeItem('playerName');
+    (global as any).maybeShowNameSetup(jest.fn());
+    expect(document.getElementById('name-setup')!.style.display).toBe('flex');
+  });
+
+  it('saves the trimmed name and calls callback on button click', () => {
+    localStorage.removeItem('playerName');
+    const cb = jest.fn();
+    (global as any).maybeShowNameSetup(cb);
+    const input = document.getElementById('name-setup-input') as HTMLInputElement;
+    input.value = '  Zorg  ';
+    document.getElementById('name-setup-btn')!.click();
+    expect(localStorage.getItem('playerName')).toBe('Zorg');
+    expect(cb).toHaveBeenCalledTimes(1);
+    expect(document.getElementById('name-setup')!.style.display).toBe('none');
+  });
+
+  it('falls back to "Hunter" when input is blank', () => {
+    localStorage.removeItem('playerName');
+    const cb = jest.fn();
+    (global as any).maybeShowNameSetup(cb);
+    const input = document.getElementById('name-setup-input') as HTMLInputElement;
+    input.value = '   ';
+    document.getElementById('name-setup-btn')!.click();
+    expect(localStorage.getItem('playerName')).toBe('Hunter');
+    expect(cb).toHaveBeenCalledTimes(1);
+  });
+
+  it('saves name and calls callback on Enter key', () => {
+    localStorage.removeItem('playerName');
+    const cb = jest.fn();
+    (global as any).maybeShowNameSetup(cb);
+    const input = document.getElementById('name-setup-input') as HTMLInputElement;
+    input.value = 'Kira';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(localStorage.getItem('playerName')).toBe('Kira');
+    expect(cb).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not call callback on non-Enter key', () => {
+    localStorage.removeItem('playerName');
+    const cb = jest.fn();
+    (global as any).maybeShowNameSetup(cb);
+    const input = document.getElementById('name-setup-input') as HTMLInputElement;
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
+    expect(cb).not.toHaveBeenCalled();
   });
 });
 
@@ -172,7 +242,7 @@ describe('refreshLevelBar', () => {
   });
 
   it('shows correct level and progress in text content', () => {
-    localStorage.setItem('totalXP', '150'); // level 2, progress 50%
+    localStorage.setItem('totalXP', '200'); // level 2, 50% (100 XP into a 200-XP level)
     (global as any).refreshLevelBar();
     expect(document.getElementById('levelProgress').textContent).toBe('Lv.2 — 50%');
   });
@@ -182,6 +252,7 @@ describe('refreshLevelBar', () => {
 
 describe('updateNameTag', () => {
   it('shows Hunter — Novice by default', () => {
+    localStorage.removeItem('playerName');
     (global as any).updateNameTag();
     expect(document.getElementById('nameTag').textContent).toBe('Hunter — Novice');
   });
@@ -193,7 +264,7 @@ describe('updateNameTag', () => {
   });
 
   it('shows the correct rank title at level 10', () => {
-    localStorage.setItem('totalXP', '900');
+    localStorage.setItem('totalXP', '4500'); // level 10 (xpToLevel(10) = 4500)
     (global as any).updateNameTag();
     expect(document.getElementById('nameTag').textContent).toContain('Warrior');
   });
@@ -375,9 +446,9 @@ describe('init', () => {
     (global as any)._setDb(mockDb);
     (global as any).init();
     document.querySelector('.center ul li').click();
-    // newXP = 121 → level 2, progress 21%; animateBar(96→100) then animateBar(0→21)
+    // newXP = 121 → level 2 (starts at 100, needs 200), progress = floor(21/200*100) = 10%
     jest.runAllTimers();
-    expect(document.getElementById('levelProgress').style.width).toBe('21%');
+    expect(document.getElementById('levelProgress').style.width).toBe('10%');
   });
 
   it('handles DB error on objective update without crashing', () => {
@@ -398,5 +469,37 @@ describe('init', () => {
     (global as any)._setDb(mockDb);
     (global as any).init();
     expect(() => document.querySelector('.center ul li').click()).not.toThrow();
+  });
+});
+
+// ── showRankUpModal ───────────────────────────────────────────────────────────
+
+describe('showRankUpModal', () => {
+  const dRank = { rank: 'D', title: 'Apprentice', minLevel: 5 };
+
+  it('shows the overlay and info modal', () => {
+    (global as any).showRankUpModal(dRank);
+    expect(document.getElementById('overlay').style.display).toBe('block');
+    expect(document.getElementById('info').style.display).toBe('block');
+  });
+
+  it('adds rank-up class to #info', () => {
+    (global as any).showRankUpModal(dRank);
+    expect(document.getElementById('info').classList.contains('rank-up')).toBe(true);
+  });
+
+  it('sets the paragraph text with the rank details', () => {
+    (global as any).showRankUpModal(dRank);
+    const p = document.querySelector('#info .banner p') as HTMLElement;
+    expect(p.textContent).toContain('D-Rank');
+    expect(p.textContent).toContain('Apprentice');
+  });
+
+  it('hides modal and removes rank-up class on overlay click', () => {
+    (global as any).showRankUpModal(dRank);
+    document.getElementById('overlay').click();
+    expect(document.getElementById('overlay').style.display).toBe('none');
+    expect(document.getElementById('info').style.display).toBe('none');
+    expect(document.getElementById('info').classList.contains('rank-up')).toBe(false);
   });
 });

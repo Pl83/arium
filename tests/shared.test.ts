@@ -6,7 +6,9 @@ beforeEach(() => {
 
 const {
   goalTarget, goalTitle, getLevel, getLevelProgress, getRank,
+  xpToLevel, xpForNextLevel,
   statForTitle, getTotalXP, getPlayerName, getStats, incrementStat,
+  getDeviceId,
   GOAL_CONFIG,
 } = require('../src/shared');
 
@@ -51,22 +53,50 @@ describe('goalTitle', () => {
 // ── getLevel ──────────────────────────────────────────────────────────────────
 
 describe('getLevel', () => {
-  it('level 1 at xp = 0', ()  => { expect(getLevel(0)).toBe(1); });
-  it('level 1 at xp = 99', () => { expect(getLevel(99)).toBe(1); });
-  it('level 2 at xp = 100', ()=> { expect(getLevel(100)).toBe(2); });
-  it('level 2 at xp = 199', ()=> { expect(getLevel(199)).toBe(2); });
-  it('level 10 at xp = 900', ()=> { expect(getLevel(900)).toBe(10); });
+  it('level 1 at xp = 0',    () => { expect(getLevel(0)).toBe(1); });
+  it('level 1 at xp = 99',   () => { expect(getLevel(99)).toBe(1); });
+  it('level 2 at xp = 100',  () => { expect(getLevel(100)).toBe(2); });
+  it('level 2 at xp = 299',  () => { expect(getLevel(299)).toBe(2); });
+  it('level 3 at xp = 300',  () => { expect(getLevel(300)).toBe(3); });
+  it('level 5 at xp = 1000', () => { expect(getLevel(1000)).toBe(5); });
+  it('level 10 at xp = 4500',() => { expect(getLevel(4500)).toBe(10); });
+  it('xpToLevel(N) is the lower boundary for level N', () => {
+    [2, 3, 5, 10].forEach(n => {
+      expect(getLevel(xpToLevel(n))).toBe(n);
+      expect(getLevel(xpToLevel(n) - 1)).toBe(n - 1);
+    });
+  });
+});
+
+describe('xpToLevel / xpForNextLevel', () => {
+  it('xpToLevel(1) = 0',    () => { expect(xpToLevel(1)).toBe(0); });
+  it('xpToLevel(2) = 100',  () => { expect(xpToLevel(2)).toBe(100); });
+  it('xpToLevel(3) = 300',  () => { expect(xpToLevel(3)).toBe(300); });
+  it('xpToLevel(5) = 1000', () => { expect(xpToLevel(5)).toBe(1000); });
+  it('xpForNextLevel(1) = 100', () => { expect(xpForNextLevel(1)).toBe(100); });
+  it('xpForNextLevel(2) = 200', () => { expect(xpForNextLevel(2)).toBe(200); });
+  it('xpForNextLevel(N) = 100*N', () => {
+    [1,2,3,5,10].forEach(n => expect(xpForNextLevel(n)).toBe(100 * n));
+  });
 });
 
 // ── getLevelProgress ──────────────────────────────────────────────────────────
 
 describe('getLevelProgress', () => {
-  it('returns 0 at xp = 0',   () => { expect(getLevelProgress(0)).toBe(0); });
-  it('returns 50 at xp = 50', () => { expect(getLevelProgress(50)).toBe(50); });
-  it('returns 0 at exact level boundary (xp = 100)', () => {
-    expect(getLevelProgress(100)).toBe(0);
+  it('returns 0 at xp = 0 (start of level 1)',        () => { expect(getLevelProgress(0)).toBe(0); });
+  it('returns 50 at xp = 50 (half of level 1)',        () => { expect(getLevelProgress(50)).toBe(50); });
+  it('returns 0 at exact level boundary (xp = 100)',   () => { expect(getLevelProgress(100)).toBe(0); });
+  it('returns 0 at xp = 101 (1 XP into a 200-XP level)', () => { expect(getLevelProgress(101)).toBe(0); });
+  it('returns 50 at midpoint of level 2 (xp = 200)',  () => { expect(getLevelProgress(200)).toBe(50); });
+  it('returns 0 at start of level 3 (xp = 300)',      () => { expect(getLevelProgress(300)).toBe(0); });
+  it('returns 50 at midpoint of level 3 (xp = 450)',  () => { expect(getLevelProgress(450)).toBe(50); });
+  it('is always in [0, 99]', () => {
+    [0, 50, 99, 100, 300, 1000, 4500].forEach(xp => {
+      const p = getLevelProgress(xp);
+      expect(p).toBeGreaterThanOrEqual(0);
+      expect(p).toBeLessThan(100);
+    });
   });
-  it('returns 1 at xp = 101', () => { expect(getLevelProgress(101)).toBe(1); });
 });
 
 // ── getRank ───────────────────────────────────────────────────────────────────
@@ -138,6 +168,31 @@ describe('getStats', () => {
   it('returns empty object on corrupt JSON (catch branch)', () => {
     localStorage.setItem('stats', '{corrupted}');
     expect(getStats()).toEqual({});
+  });
+});
+
+// ── getDeviceId ───────────────────────────────────────────────────────────────
+
+describe('getDeviceId', () => {
+  it('generates a UUID-format string on first call', () => {
+    const id = getDeviceId();
+    expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  });
+
+  it('returns the same value on subsequent calls', () => {
+    const first  = getDeviceId();
+    const second = getDeviceId();
+    expect(first).toBe(second);
+  });
+
+  it('stores the id under the key "deviceId"', () => {
+    const id = getDeviceId();
+    expect(localStorage.getItem('deviceId')).toBe(id);
+  });
+
+  it('returns the pre-existing value if one is already in localStorage', () => {
+    localStorage.setItem('deviceId', 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee');
+    expect(getDeviceId()).toBe('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee');
   });
 });
 

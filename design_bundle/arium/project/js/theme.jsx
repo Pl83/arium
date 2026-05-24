@@ -1,0 +1,165 @@
+// Theme tokens for three design directions × light/dark.
+// Each variant exports: colors, fonts, radii, panel CSS, fx (effects).
+
+// — V1: REFINED HOLOGRAPHIC HUD (current direction, polished) —
+const V1_DARK = {
+  id: 'v1', mode: 'dark', name: 'Holographic HUD',
+  // base
+  bg: '#06080F',
+  bgGrad: 'radial-gradient(ellipse at 50% -10%, rgba(20,40,90,0.55) 0%, transparent 60%), radial-gradient(ellipse at 50% 120%, rgba(15,30,70,0.4) 0%, transparent 50%)',
+  panel: 'rgba(11, 22, 40, 0.78)',
+  panelSolid: '#0B1628',
+  panelBorder: 'rgba(79, 195, 247, 0.28)',
+  panelGlow: '0 0 30px rgba(79, 195, 247, 0.15), inset 0 0 60px rgba(0, 0, 0, 0.4)',
+  // typography
+  fg: '#E6EEFF',
+  fgMuted: 'rgba(200, 216, 255, 0.55)',
+  fgDim: 'rgba(200, 216, 255, 0.35)',
+  // accents
+  accent: '#5BCBFB',
+  accentSoft: 'rgba(91, 203, 251, 0.18)',
+  gold: '#FFD555',
+  goldSoft: 'rgba(255, 213, 85, 0.22)',
+  success: '#22E899',
+  danger: '#FF4A6A',
+  violet: '#8C9BFF',
+  // type
+  display: "'Space Grotesk', system-ui, sans-serif",
+  body: "'Space Grotesk', system-ui, sans-serif",
+  mono: "'JetBrains Mono', ui-monospace, monospace",
+  // attribute colors
+  attr: { strength: '#5BCBFB', core: '#22E899', power: '#FFD555', endurance: '#FF8E5F' },
+  rankTier: { E:'#A1A8B5', D:'#22E899', C:'#5BCBFB', B:'#C792EA', A:'#FF4A6A', S:'#FFD555' },
+  radius: 0,            // sharp corners are the language
+  cardClip: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))',
+  // backdrop
+  scanline: 'repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(91,203,251,0.025) 2px, rgba(91,203,251,0.025) 3px)',
+  vignette: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.4) 100%)',
+};
+const V1_LIGHT = {
+  ...V1_DARK,
+  mode: 'light',
+  bg: '#EEF3FB',
+  bgGrad: 'radial-gradient(ellipse at 50% -10%, rgba(91,203,251,0.18) 0%, transparent 60%)',
+  panel: 'rgba(255, 255, 255, 0.85)',
+  panelSolid: '#FFFFFF',
+  panelBorder: 'rgba(30, 120, 200, 0.25)',
+  panelGlow: '0 4px 20px rgba(30, 80, 180, 0.08), inset 0 0 0 1px rgba(255,255,255,0.5)',
+  fg: '#0B1628',
+  fgMuted: 'rgba(11, 22, 40, 0.65)',
+  fgDim: 'rgba(11, 22, 40, 0.4)',
+  accent: '#0F8DD9',
+  accentSoft: 'rgba(15, 141, 217, 0.12)',
+  gold: '#C99100',
+  goldSoft: 'rgba(201, 145, 0, 0.15)',
+  success: '#0F9D5C',
+  danger: '#D32F4E',
+  violet: '#5B4BD9',
+  scanline: 'none',
+  vignette: 'none',
+};
+
+// — V2: CRYSTALLINE / ARCANE (matches logo) —
+const V2_DARK = {
+  id: 'v2', mode: 'dark', name: 'Crystalline Arcane',
+  bg: '#08051A',
+  bgGrad: 'radial-gradient(ellipse at 30% 10%, rgba(120,80,255,0.35) 0%, transparent 55%), radial-gradient(ellipse at 80% 90%, rgba(80,120,255,0.25) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(180,140,255,0.08) 0%, transparent 70%)',
+  panel: 'linear-gradient(155deg, rgba(40,30,90,0.85) 0%, rgba(20,15,55,0.78) 100%)',
+  panelSolid: '#170B35',
+  panelBorder: 'rgba(165, 140, 255, 0.35)',
+  panelGlow: '0 0 40px rgba(120, 100, 255, 0.2), inset 0 1px 0 rgba(200, 180, 255, 0.15)',
+  fg: '#EAE0FF',
+  fgMuted: 'rgba(220, 210, 255, 0.6)',
+  fgDim: 'rgba(220, 210, 255, 0.38)',
+  accent: '#9B8CFF',
+  accentSoft: 'rgba(155, 140, 255, 0.2)',
+  gold: '#FFCB6B',
+  goldSoft: 'rgba(255, 203, 107, 0.22)',
+  success: '#69F0CE',
+  danger: '#FF6B9B',
+  violet: '#C792EA',
+  display: "'Cinzel', 'Times New Roman', serif",
+  body: "'Manrope', system-ui, sans-serif",
+  mono: "'JetBrains Mono', ui-monospace, monospace",
+  attr: { strength: '#FF8FB5', core: '#9B8CFF', power: '#FFCB6B', endurance: '#69F0CE' },
+  rankTier: { E:'#B8B0D0', D:'#69F0CE', C:'#9B8CFF', B:'#C792EA', A:'#FF8FB5', S:'#FFCB6B' },
+  radius: 2,
+  cardClip: 'polygon(16px 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 16px 100%, 0 calc(100% - 16px), 0 16px)',
+  scanline: 'none',
+  vignette: 'radial-gradient(ellipse at center, transparent 30%, rgba(5,2,20,0.5) 100%)',
+};
+const V2_LIGHT = {
+  ...V2_DARK,
+  mode: 'light',
+  bg: '#F5F0FF',
+  bgGrad: 'radial-gradient(ellipse at 30% 10%, rgba(155,140,255,0.18) 0%, transparent 55%), radial-gradient(ellipse at 80% 90%, rgba(120,90,255,0.12) 0%, transparent 50%)',
+  panel: 'linear-gradient(155deg, rgba(255,255,255,0.95) 0%, rgba(245,240,255,0.85) 100%)',
+  panelSolid: '#FFFFFF',
+  panelBorder: 'rgba(110, 80, 220, 0.3)',
+  panelGlow: '0 4px 24px rgba(110, 80, 220, 0.1), inset 0 1px 0 rgba(255,255,255,0.8)',
+  fg: '#1A0B40',
+  fgMuted: 'rgba(26, 11, 64, 0.65)',
+  fgDim: 'rgba(26, 11, 64, 0.4)',
+  accent: '#6E50DC',
+  accentSoft: 'rgba(110, 80, 220, 0.12)',
+  gold: '#B07700',
+  goldSoft: 'rgba(176, 119, 0, 0.15)',
+  success: '#11A580',
+  danger: '#D63B73',
+  vignette: 'none',
+};
+
+// — V3: MINIMALIST GAMIFIED (modern fitness app w/ subtle game cues) —
+const V3_DARK = {
+  id: 'v3', mode: 'dark', name: 'Minimalist Gamified',
+  bg: '#0B0B0E',
+  bgGrad: 'none',
+  panel: '#16161B',
+  panelSolid: '#16161B',
+  panelBorder: 'rgba(255, 255, 255, 0.06)',
+  panelGlow: 'none',
+  fg: '#F2F2F5',
+  fgMuted: 'rgba(242, 242, 245, 0.62)',
+  fgDim: 'rgba(242, 242, 245, 0.35)',
+  accent: '#62E6B5',
+  accentSoft: 'rgba(98, 230, 181, 0.14)',
+  gold: '#FFB547',
+  goldSoft: 'rgba(255, 181, 71, 0.15)',
+  success: '#62E6B5',
+  danger: '#FF6B6B',
+  violet: '#A48BFF',
+  display: "'Space Grotesk', system-ui, sans-serif",
+  body: "'Inter Tight', 'Inter', system-ui, sans-serif",
+  mono: "'JetBrains Mono', ui-monospace, monospace",
+  attr: { strength: '#FF8E73', core: '#A48BFF', power: '#FFB547', endurance: '#62E6B5' },
+  rankTier: { E:'#9C9CA8', D:'#62E6B5', C:'#5BBBFF', B:'#A48BFF', A:'#FF8E73', S:'#FFB547' },
+  radius: 20,
+  cardClip: 'none',
+  scanline: 'none',
+  vignette: 'none',
+};
+const V3_LIGHT = {
+  ...V3_DARK,
+  mode: 'light',
+  bg: '#FAFAFA',
+  panel: '#FFFFFF',
+  panelSolid: '#FFFFFF',
+  panelBorder: 'rgba(0, 0, 0, 0.06)',
+  panelGlow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)',
+  fg: '#0B0B0E',
+  fgMuted: 'rgba(11, 11, 14, 0.62)',
+  fgDim: 'rgba(11, 11, 14, 0.35)',
+  accent: '#0E9F70',
+  accentSoft: 'rgba(14, 159, 112, 0.10)',
+  gold: '#B07700',
+  goldSoft: 'rgba(176, 119, 0, 0.12)',
+  danger: '#D63B3B',
+};
+
+const THEMES = {
+  v1: { dark: V1_DARK, light: V1_LIGHT },
+  v2: { dark: V2_DARK, light: V2_LIGHT },
+  v3: { dark: V3_DARK, light: V3_LIGHT },
+};
+
+Object.assign(window, { THEMES });

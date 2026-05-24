@@ -12,6 +12,8 @@ module.exports = {
     'src/trial.ts',
     'src/profil.ts',
     'src/notifications.ts',
+    'src/supabase.ts',
+    'src/rankings.ts',
   ],
   coverageReporters: ['text', 'lcov', 'html'],
   coverageDirectory: 'coverage',

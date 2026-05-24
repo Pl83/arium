@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; media-src *; img-src 'self' data: content:;">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; media-src *; img-src 'self' data: content:; connect-src https://*.supabase.co;">
         <meta name="format-detection" content="telephone=no">
         <meta name="msapplication-tap-highlight" content="no">
         <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover">
@@ -10,18 +10,24 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-        <link rel="stylesheet" href="css/trial.css">
-        <title>ARIUM — Trial</title>
+        <link rel="stylesheet" href="css/rankings.css">
+        <title>ARIUM — Rankings</title>
     </head>
     <body>
-        <main class="app">
-            <!-- JS renders content here -->
+        <main>
+            <header class="rankings-heading">
+                <span class="rankings-kicker">Global Standings</span>
+                <h1 class="rankings-title">Rankings</h1>
+            </header>
+            <div class="app">
+                <!-- populated by rankings.js -->
+            </div>
         </main>
 
         <!-- ── Footer nav ── -->
         <footer>
             <nav>
-                <a href="trial.html" class="nav-active">
+                <a href="trial.html">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2M15 5l4-4 2 2-4 4"/>
                     </svg>
@@ -33,7 +39,7 @@
                     </svg>
                     <span class="nav-label">Home</span>
                 </a>
-                <a href="rankings.html">
+                <a href="rankings.html" class="nav-active">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M3 18h18M3 18l1-9 5 4 3-7 3 7 5-4 1 9"/>
                     </svg>
@@ -49,6 +55,7 @@
         </footer>
 
         <script src="js/shared.js"></script>
-        <script src="js/trial.js"></script>
+        <script src="js/supabase.js"></script>
+        <script src="js/rankings.js"></script>
     </body>
 </html>

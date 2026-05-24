@@ -1,6 +1,16 @@
 // Loaded before all page scripts — globals available everywhere
 
-const XP_PER_LEVEL = 100;
+// XP needed to advance from level N to N+1 = XP_BASE_PER_LEVEL × N
+// Total XP to reach level N = XP_BASE_PER_LEVEL × N×(N-1)/2
+const XP_BASE_PER_LEVEL = 100;
+
+function xpToLevel(level: number): number {
+  return XP_BASE_PER_LEVEL * level * (level - 1) / 2;
+}
+
+function xpForNextLevel(level: number): number {
+  return XP_BASE_PER_LEVEL * level;
+}
 
 const RANKS: RankEntry[] = [
   { minLevel:  1, rank: 'E', title: 'Novice'     },
@@ -36,11 +46,12 @@ function getTotalXP(): number {
 }
 
 function getLevel(xp: number): number {
-  return Math.floor(xp / XP_PER_LEVEL) + 1;
+  return Math.floor((1 + Math.sqrt(1 + 8 * xp / XP_BASE_PER_LEVEL)) / 2);
 }
 
 function getLevelProgress(xp: number): number {
-  return xp % XP_PER_LEVEL;
+  const level = getLevel(xp);
+  return Math.floor((xp - xpToLevel(level)) / xpForNextLevel(level) * 100);
 }
 
 function getRank(level: number): RankEntry {
@@ -69,6 +80,18 @@ function statForTitle(title: string): StatKey | null {
   return null;
 }
 
+function getDeviceId(): string {
+  let id = localStorage.getItem('deviceId');
+  if (!id) {
+    id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+    localStorage.setItem('deviceId', id);
+  }
+  return id;
+}
+
 function incrementStat(statName: StatKey | null): void {
   if (!statName) return;
   const stats = getStats();
@@ -79,12 +102,14 @@ function incrementStat(statName: StatKey | null): void {
 // === NODE/JEST EXPORT — invisible in browser (module is undefined there) ===
 /* istanbul ignore else */
 if (typeof module !== 'undefined') {
-  global.XP_PER_LEVEL  = XP_PER_LEVEL;
+  global.XP_BASE_PER_LEVEL = XP_BASE_PER_LEVEL;
   global.RANKS         = RANKS;
   global.GOAL_CONFIG   = GOAL_CONFIG;
   global.STAT_KEYS     = STAT_KEYS;
   global.STAT_LABELS   = STAT_LABELS;
   global.STAT_SOFT_CAP = STAT_SOFT_CAP;
+  global.xpToLevel        = xpToLevel;
+  global.xpForNextLevel   = xpForNextLevel;
   global.goalTarget       = goalTarget;
   global.goalTitle        = goalTitle;
   global.getTotalXP       = getTotalXP;
@@ -95,9 +120,10 @@ if (typeof module !== 'undefined') {
   global.getStats         = getStats;
   global.statForTitle     = statForTitle;
   global.incrementStat    = incrementStat;
+  global.getDeviceId      = getDeviceId;
   module.exports = {
-    XP_PER_LEVEL, RANKS, GOAL_CONFIG, STAT_KEYS, STAT_LABELS, STAT_SOFT_CAP,
-    goalTarget, goalTitle, getTotalXP, getLevel, getLevelProgress,
-    getRank, getPlayerName, getStats, statForTitle, incrementStat,
+    XP_BASE_PER_LEVEL, RANKS, GOAL_CONFIG, STAT_KEYS, STAT_LABELS, STAT_SOFT_CAP,
+    xpToLevel, xpForNextLevel, goalTarget, goalTitle, getTotalXP, getLevel, getLevelProgress,
+    getRank, getPlayerName, getStats, statForTitle, incrementStat, getDeviceId,
   };
 }

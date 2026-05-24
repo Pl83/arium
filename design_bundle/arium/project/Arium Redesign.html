@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Arium — Redesign Explorations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Cinzel:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  html, body {
+    margin: 0;
+    background: #1d1f24;
+    min-height: 100vh;
+    font-family: 'Inter Tight', 'Space Grotesk', system-ui, sans-serif;
+    color: #e5e7eb;
+  }
+  * { box-sizing: border-box; }
+  @keyframes arBump {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.16); }
+    100% { transform: scale(1); }
+  }
+  @keyframes arFade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes arPop {
+    0%   { opacity: 0; transform: scale(0.86); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes arShimmer {
+    0%, 100% { opacity: 0.6; }
+    50%      { opacity: 1; }
+  }
+</style>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="js/icons.jsx"></script>
+<script type="text/babel" src="js/theme.jsx"></script>
+<script type="text/babel" src="js/widgets.jsx"></script>
+<script type="text/babel" src="js/screens.jsx"></script>
+<script type="text/babel" src="js/app.jsx"></script>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+  const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "v1Mode": "dark",
+    "v2Mode": "dark",
+    "v3Mode": "dark"
+  }/*EDITMODE-END*/;
+
+  function Root() {
+    const [tw, setTweak] = useTweaks(TWEAK_DEFAULTS);
+    const t1 = THEMES.v1[tw.v1Mode || 'dark'];
+    const t2 = THEMES.v2[tw.v2Mode || 'dark'];
+    const t3 = THEMES.v3[tw.v3Mode || 'dark'];
+
+    return (
+      <>
+        <DesignCanvas>
+          <DCSection id="overview" title="Arium · Redesign explorations" subtitle="Three design directions for the gamified fitness app. Each phone is a working interactive prototype — tap the bottom-nav, toggle quests, fire the rank-up modal. Toggle light/dark per direction in the Tweaks panel.">
+            <DCArtboard id="v1" label={`A · ${t1.name} (${t1.mode})`} width={400} height={780}>
+              <AriumDevice theme={t1} />
+            </DCArtboard>
+            <DCArtboard id="v2" label={`B · ${t2.name} (${t2.mode})`} width={400} height={780}>
+              <AriumDevice theme={t2} />
+            </DCArtboard>
+            <DCArtboard id="v3" label={`C · ${t3.name} (${t3.mode})`} width={400} height={780}>
+              <AriumDevice theme={t3} />
+            </DCArtboard>
+          </DCSection>
+
+          <DCPostIt x={40} y={60} color="amber">
+            <strong>How to read this:</strong><br/>
+            • Each phone is fully interactive — tap the nav, toggle quests, open trials.<br/>
+            • Bottom-tab order: Home / Trials / Ranks / Profile.<br/>
+            • Tap a Solo exercise in Trials → enters the rep counter.<br/>
+            • Tap “Preview rank-up / penalty” on Home to see the modals.<br/>
+            • Use Tweaks (top toolbar) to flip light ↔ dark per direction.
+          </DCPostIt>
+        </DesignCanvas>
+
+        <TweaksPanel title="Tweaks">
+          <TweakSection label="Appearance per direction" />
+          <TweakRadio
+            label="A · Holographic HUD"
+            value={tw.v1Mode}
+            options={['dark', 'light']}
+            onChange={(v) => setTweak('v1Mode', v)}
+          />
+          <TweakRadio
+            label="B · Crystalline Arcane"
+            value={tw.v2Mode}
+            options={['dark', 'light']}
+            onChange={(v) => setTweak('v2Mode', v)}
+          />
+          <TweakRadio
+            label="C · Minimalist Gamified"
+            value={tw.v3Mode}
+            options={['dark', 'light']}
+            onChange={(v) => setTweak('v3Mode', v)}
+          />
+        </TweaksPanel>
+      </>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<Root />);
+</script>
+
+</body>
+</html>

@@ -20,16 +20,43 @@ function onDeviceReady(): void {
     console.error('DB Error', err);
   }, () => {
     initNotifications(() => {
-      handleDailyReset(() => {
-        // seed first, then render — fixes race condition on first launch
-        seedInitialObjectives(() => {
-          refreshLevelBar();
-          updateNameTag();
-          init();
+      maybeShowNameSetup(() => {
+        handleDailyReset(() => {
+          // seed first, then render — fixes race condition on first launch
+          seedInitialObjectives(() => {
+            refreshLevelBar();
+            updateNameTag();
+            init();
+          });
         });
       });
     });
   });
+}
+
+// --- First-run name setup ---
+
+function maybeShowNameSetup(callback: () => void): void {
+  if (localStorage.getItem('playerName') !== null) {
+    callback();
+    return;
+  }
+  const overlay = document.getElementById('name-setup') as HTMLElement;
+  const input   = document.getElementById('name-setup-input') as HTMLInputElement;
+  const btn     = document.getElementById('name-setup-btn') as HTMLButtonElement;
+
+  overlay.style.display = 'flex';
+  input.focus();
+
+  function confirm(): void {
+    const name = input.value.trim() || 'Hunter';
+    localStorage.setItem('playerName', name);
+    overlay.style.display = 'none';
+    callback();
+  }
+
+  btn.addEventListener('click', confirm);
+  input.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') confirm(); });
 }
 
 // --- Daily reset ---
@@ -78,6 +105,7 @@ function applyStreakAndPenalty(total: number, done: number): void {
 function showPenaltyModal(missed: number, penalty: number): void {
   const overlay = document.getElementById('overlay') as HTMLElement;
   const info = document.getElementById('info') as HTMLElement;
+  (info.querySelector('.banner .alert h2') as HTMLElement).textContent = 'Penalty';
   const p = info.querySelector('.banner p') as HTMLElement;
   p.textContent = missed + ' objective' + (missed > 1 ? 's' : '') + ' unfinished yesterday. −' + penalty + ' XP. Streak reset.';
   p.className = 'failure';
@@ -86,6 +114,23 @@ function showPenaltyModal(missed: number, penalty: number): void {
   overlay.addEventListener('click', () => {
     overlay.style.display = 'none';
     info.style.display = 'none';
+  }, { once: true });
+}
+
+function showRankUpModal(rank: RankEntry): void {
+  const overlay = document.getElementById('overlay') as HTMLElement;
+  const info = document.getElementById('info') as HTMLElement;
+  (info.querySelector('.banner .alert h2') as HTMLElement).textContent = 'Rank Up';
+  const p = info.querySelector('.banner p') as HTMLElement;
+  p.textContent = rank.rank + '-Rank · ' + rank.title + '. The system acknowledges your strength.';
+  p.className = 'goldy';
+  info.classList.add('rank-up');
+  overlay.style.display = 'block';
+  info.style.display = 'block';
+  overlay.addEventListener('click', () => {
+    overlay.style.display = 'none';
+    info.style.display = 'none';
+    info.classList.remove('rank-up');
   }, { once: true });
 }
 
@@ -227,7 +272,11 @@ function init(): void {
               animateBar(oldProgress, 100, () => {
                 bar.style.width = '0%';
                 bar.textContent = 'Lv.' + getLevel(newXP) + ' — ' + newProgress + '%';
-                animateBar(0, newProgress);
+                animateBar(0, newProgress, () => {
+                  if (getRank(getLevel(newXP)).rank !== getRank(getLevel(oldXP)).rank) {
+                    showRankUpModal(getRank(getLevel(newXP)));
+                  }
+                });
               });
             } else if (xpDelta > 0) {
               bar.textContent = 'Lv.' + getLevel(newXP) + ' — ' + newProgress + '%';
@@ -261,10 +310,12 @@ function init(): void {
 if (typeof module !== 'undefined') {
   global._setDb                   = (mockDb: SQLiteDatabase) => { db = mockDb; };
   global.onDeviceReady            = onDeviceReady;
+  global.maybeShowNameSetup       = maybeShowNameSetup;
   global.handleDailyReset         = handleDailyReset;
   global.checkYesterdayCompletion = checkYesterdayCompletion;
   global.applyStreakAndPenalty    = applyStreakAndPenalty;
   global.showPenaltyModal         = showPenaltyModal;
+  global.showRankUpModal          = showRankUpModal;
   global.resetObjectives          = resetObjectives;
   global.seedInitialObjectives    = seedInitialObjectives;
   global.refreshLevelBar          = refreshLevelBar;
@@ -272,8 +323,8 @@ if (typeof module !== 'undefined') {
   global.animateBar               = animateBar;
   global.init                     = init;
   module.exports = {
-    onDeviceReady, handleDailyReset, checkYesterdayCompletion, applyStreakAndPenalty,
-    showPenaltyModal, resetObjectives, seedInitialObjectives,
+    onDeviceReady, maybeShowNameSetup, handleDailyReset, checkYesterdayCompletion, applyStreakAndPenalty,
+    showPenaltyModal, showRankUpModal, resetObjectives, seedInitialObjectives,
     refreshLevelBar, updateNameTag, animateBar, init,
   };
 }

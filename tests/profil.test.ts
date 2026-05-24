@@ -51,27 +51,39 @@ describe('render', () => {
   });
 
   it('shows rank D at level 5', () => {
-    localStorage.setItem('totalXP', '400'); // level 5
+    localStorage.setItem('totalXP', '1000'); // level 5 (xpToLevel(5) = 1000)
     profilModule.render();
     expect(document.getElementById('rankLetter').textContent).toBe('D');
   });
 
   it('shows rank C at level 10', () => {
-    localStorage.setItem('totalXP', '900');
+    localStorage.setItem('totalXP', '4500'); // level 10 (xpToLevel(10) = 4500)
     profilModule.render();
     expect(document.getElementById('rankLetter').textContent).toBe('C');
   });
 
   it('displays the correct level number', () => {
-    localStorage.setItem('totalXP', '250'); // level 3
+    localStorage.setItem('totalXP', '350'); // level 3 (300–599)
     profilModule.render();
     expect(document.getElementById('profileLevel').textContent).toBe('3');
   });
 
   it('sets the progress bar width correctly', () => {
-    localStorage.setItem('totalXP', '250'); // level 3, 50% progress
+    localStorage.setItem('totalXP', '450'); // level 3, 50% (300 + 150 of 300)
     profilModule.render();
     expect(document.getElementById('profileLevelProgress').style.width).toBe('50%');
+  });
+
+  it('sets rank-letter class to the current rank tier', () => {
+    profilModule.render(); // E at level 1
+    expect(document.getElementById('rankLetter').className).toContain('rank-e');
+  });
+
+  it('updates rank-letter class when rank changes', () => {
+    localStorage.setItem('totalXP', '1000'); // level 5, rank D
+    profilModule.render();
+    expect(document.getElementById('rankLetter').className).toContain('rank-d');
+    expect(document.getElementById('rankLetter').className).not.toContain('rank-e');
   });
 
   it('displays streak in singular when streak = 1', () => {

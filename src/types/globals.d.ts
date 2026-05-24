@@ -78,6 +78,15 @@ interface NotificationTime {
   minute: number;
 }
 
+interface PlayerRow {
+  device_id: string;
+  player_name: string;
+  total_xp: number;
+  level: number;
+  rank_letter: string;
+  updated_at: string;
+}
+
 // ── Jest interop ───────────────────────────────────────────────────────────
 // Allows `if (typeof module !== 'undefined') { module.exports = ... }`
 // and `global.fn = fn` in global-script files to compile under "module": "none".
