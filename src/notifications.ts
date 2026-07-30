@@ -7,21 +7,21 @@ const NOTIFICATION_TIMES: NotificationTime[] = [
 ];
 
 const NOTIFICATION_MESSAGES: string[] = [
-  'Daily quest active. Report to the training ground, Hunter.',
-  'Your rank demands discipline. Complete today\'s objectives.',
-  'Strength doesn\'t level up by itself. Time to grind.',
-  'The system has issued your daily quest. Do not ignore it.',
-  'E-rank thinking won\'t get you to S-rank. Move.',
-  'Your core is weak. Fix that before the dungeon opens.',
-  'Power stat falling behind. Today\'s quest awaits.',
+  'The daily ordeal is set. Report to the training ground, Saint.',
+  'Your rank demands discipline. Meet today\'s ordeals.',
+  'Cosmo does not burn by itself. Time to train.',
+  'The Sanctuary has issued your daily ordeal. Do not ignore it.',
+  'Bronze thinking will not carry you to Gold. Move.',
+  'Your core is weak. Mend it before the ordeal begins.',
+  'Power falling behind. Today\'s ordeal awaits.',
   'Endurance is the difference between survival and defeat.',
-  'Daily quest pending. The gate closes at midnight.',
-  'A true hunter doesn\'t skip rest days — or quest days.',
-  'The ranking board is watching. Don\'t fall behind today.',
-  'Complete your objectives. Every rep counts toward ascension.',
-  'You\'ve faced worse. Today\'s quest is just warm-up.',
-  'The gap between E and S is built one quest at a time.',
-  'Quest incomplete. Your next rank won\'t wait for you.',
+  'Daily ordeal pending. The gate closes at midnight.',
+  'A true Saint does not skip rest days — or ordeal days.',
+  'The standings are watching. Do not fall behind today.',
+  'Meet your ordeals. Every rep feeds the Cosmo.',
+  'You have faced worse. Today\'s ordeal is only the warm-up.',
+  'The gap between Bronze and Gold is built one ordeal at a time.',
+  'Ordeal unfinished. Your next rank will not wait for you.',
 ];
 
 function _getPlugin(): LocalNotificationPlugin | null {
@@ -57,7 +57,7 @@ function _rescheduleIfNewDay(): void {
         if (at > now) {
           notifications.push({
             id:    dayOffset * 10 + slot,
-            title: 'Daily Quest',
+            title: 'Daily Ordeal',
             text:  NOTIFICATION_MESSAGES[(offset + d * 3 + slot) % NOTIFICATION_MESSAGES.length],
             trigger: { at: at },
           });

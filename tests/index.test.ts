@@ -3,8 +3,11 @@
 const { createSQLiteMock } = require('./helpers/sqlite-mock');
 
 const INDEX_DOM = `
-  <div id="levelProgress" style="width:0%">Lv.1 — 0%</div>
+  <div id="levelProgress" style="width:0%"></div>
+  <span id="levelLabel">Lv.1 — 0% Cosmo</span>
   <div id="nameTag"></div>
+  <span id="rankTitle" class="rank-letter rank-e"></span>
+  <svg id="rankMedallion" class="rank-medallion rank-letter rank-e"><text id="rankGlyph"></text></svg>
   <div id="overlay" style="display:none;"></div>
   <div id="info" style="display:none;">
     <div class="banner">
@@ -92,14 +95,14 @@ describe('maybeShowNameSetup', () => {
     expect(document.getElementById('name-setup')!.style.display).toBe('none');
   });
 
-  it('falls back to "Hunter" when input is blank', () => {
+  it('falls back to "Saint" when input is blank', () => {
     localStorage.removeItem('playerName');
     const cb = jest.fn();
     (global as any).maybeShowNameSetup(cb);
     const input = document.getElementById('name-setup-input') as HTMLInputElement;
     input.value = '   ';
     document.getElementById('name-setup-btn')!.click();
-    expect(localStorage.getItem('playerName')).toBe('Hunter');
+    expect(localStorage.getItem('playerName')).toBe('Saint');
     expect(cb).toHaveBeenCalledTimes(1);
   });
 
@@ -192,8 +195,8 @@ describe('applyStreakAndPenalty', () => {
     (global as any).applyStreakAndPenalty(4, 2);
     jest.advanceTimersByTime(200);
     const p = document.querySelector('#info .banner p');
-    expect(p.textContent).toContain('2 objectives unfinished');
-    expect(p.textContent).toContain('−30 XP');
+    expect(p.textContent).toContain('2 ordeals unfinished');
+    expect(p.textContent).toContain('−30 Cosmo');
   });
 });
 
@@ -209,19 +212,19 @@ describe('showPenaltyModal', () => {
   it('uses singular "objective" when missed = 1', () => {
     (global as any).showPenaltyModal(1, 15);
     expect(document.querySelector('#info .banner p').textContent)
-      .toContain('1 objective unfinished');
+      .toContain('1 ordeal unfinished');
   });
 
   it('uses plural "objectives" when missed > 1', () => {
     (global as any).showPenaltyModal(3, 45);
     expect(document.querySelector('#info .banner p').textContent)
-      .toContain('3 objectives unfinished');
+      .toContain('3 ordeals unfinished');
   });
 
-  it('shows the correct XP penalty in the message', () => {
+  it('shows the correct Cosmo penalty in the message', () => {
     (global as any).showPenaltyModal(2, 30);
     expect(document.querySelector('#info .banner p').textContent)
-      .toContain('−30 XP');
+      .toContain('−30 Cosmo');
   });
 
   it('dismisses on overlay click', () => {
@@ -241,32 +244,56 @@ describe('refreshLevelBar', () => {
     expect(document.getElementById('levelProgress').style.width).toBe('50%');
   });
 
-  it('shows correct level and progress in text content', () => {
+  it('writes the level and progress into the label overlay', () => {
     localStorage.setItem('totalXP', '200'); // level 2, 50% (100 XP into a 200-XP level)
     (global as any).refreshLevelBar();
-    expect(document.getElementById('levelProgress').textContent).toBe('Lv.2 — 50%');
+    expect(document.getElementById('levelLabel').textContent).toBe('Lv.2 — 50% Cosmo');
   });
 });
 
 // ── updateNameTag ─────────────────────────────────────────────────────────────
 
 describe('updateNameTag', () => {
-  it('shows Hunter — Novice by default', () => {
+  it('shows Saint by default', () => {
     localStorage.removeItem('playerName');
     (global as any).updateNameTag();
-    expect(document.getElementById('nameTag').textContent).toBe('Hunter — Novice');
+    expect(document.getElementById('nameTag').textContent).toBe('Saint');
   });
 
   it('shows the stored player name', () => {
     localStorage.setItem('playerName', 'Zara');
     (global as any).updateNameTag();
-    expect(document.getElementById('nameTag').textContent).toContain('Zara');
+    expect(document.getElementById('nameTag').textContent).toBe('Zara');
+  });
+
+  it('puts the rank title in its own element, not the name', () => {
+    localStorage.setItem('playerName', 'Zara');
+    localStorage.setItem('totalXP', '4500'); // level 10 (xpToLevel(10) = 4500)
+    (global as any).updateNameTag();
+    expect(document.getElementById('nameTag').textContent).toBe('Zara');
+    expect(document.getElementById('rankTitle').textContent).toBe('Silver Saint');
   });
 
   it('shows the correct rank title at level 10', () => {
-    localStorage.setItem('totalXP', '4500'); // level 10 (xpToLevel(10) = 4500)
+    localStorage.setItem('totalXP', '4500');
     (global as any).updateNameTag();
-    expect(document.getElementById('nameTag').textContent).toContain('Warrior');
+    expect(document.getElementById('rankTitle').textContent).toBe('Silver Saint');
+  });
+
+  it('drives the medallion glyph and rank class from the current rank', () => {
+    localStorage.setItem('totalXP', '4500'); // level 10 → rank C
+    (global as any).updateNameTag();
+    expect(document.getElementById('rankGlyph').textContent).toBe('C');
+    expect(document.getElementById('rankTitle').className).toBe('rank-letter rank-c');
+    expect(document.getElementById('rankMedallion').getAttribute('class'))
+      .toBe('rank-medallion rank-letter rank-c');
+  });
+
+  it('falls back to rank E at level 1', () => {
+    localStorage.setItem('totalXP', '0');
+    (global as any).updateNameTag();
+    expect(document.getElementById('rankGlyph').textContent).toBe('E');
+    expect(document.getElementById('rankTitle').textContent).toBe('Aspirant');
   });
 });
 

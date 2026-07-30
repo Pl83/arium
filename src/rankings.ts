@@ -62,7 +62,7 @@ function renderRankings(rows: PlayerRow[], deviceId: string, offline: boolean): 
 
       const xp   = document.createElement('span');
       xp.className = 'row-xp';
-      xp.textContent = player.total_xp + ' xp';
+      xp.textContent = player.total_xp + ' cosmo';
 
       row.appendChild(pos);
       row.appendChild(name);

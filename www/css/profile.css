@@ -1,71 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════
-   ARIUM — CRYSTALLINE ARCANE DARK — Profile
+   ARIUM — SANCTUARY · PROFILE
+   Tokens and primitives live in theme.css. Do not redeclare them here.
    ═══════════════════════════════════════════════════════════════════ */
-
-:root {
-  --bg:             #08051A;
-  --bg-grad:        radial-gradient(ellipse at 30% 10%, rgba(120,80,255,0.35) 0%, transparent 55%),
-                    radial-gradient(ellipse at 80% 90%, rgba(80,120,255,0.25) 0%, transparent 50%),
-                    radial-gradient(ellipse at 50% 50%, rgba(180,140,255,0.08) 0%, transparent 70%);
-  --panel-bg:       linear-gradient(155deg, rgba(40,30,90,0.85) 0%, rgba(20,15,55,0.78) 100%);
-  --panel-border-b: linear-gradient(135deg, rgba(200,180,255,0.5) 0%, rgba(80,60,200,0.2) 100%);
-  --fg:             #EAE0FF;
-  --fg-muted:       rgba(220, 210, 255, 0.6);
-  --fg-dim:         rgba(220, 210, 255, 0.38);
-  --accent:         #9B8CFF;
-  --accent-soft:    rgba(155, 140, 255, 0.2);
-  --gold:           #FFCB6B;
-  --gold-soft:      rgba(255, 203, 107, 0.22);
-  --success:        #69F0CE;
-  --danger:         #FF6B9B;
-  --violet:         #C792EA;
-  --attr-strength:  #FF8FB5;
-  --attr-core:      #9B8CFF;
-  --attr-power:     #FFCB6B;
-  --attr-endurance: #69F0CE;
-  --rank-e: #B8B0D0; --rank-d: #69F0CE; --rank-c: #9B8CFF;
-  --rank-b: #C792EA; --rank-a: #FF8FB5; --rank-s: #FFCB6B;
-  --clip-panel: polygon(16px 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 16px 100%, 0 calc(100% - 16px), 0 16px);
-  --clip-btn:   polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
-  --font-display: 'Cinzel', 'Times New Roman', serif;
-  --font-body:    'Manrope', system-ui, -apple-system, sans-serif;
-  --font-mono:    'JetBrains Mono', 'Consolas', ui-monospace, monospace;
-}
-
-* {
-  -webkit-tap-highlight-color: rgba(0,0,0,0);
-  margin: 0; padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  -webkit-touch-callout: none;
-  -webkit-text-size-adjust: none;
-  -webkit-user-select: none;
-  background-color: var(--bg);
-  background-image: var(--bg-grad);
-  font-family: var(--font-body);
-  font-size: 12px;
-  min-height: 100vh;
-  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
-           env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
-  color: var(--fg);
-}
-
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(ellipse at center, transparent 30%, rgba(5,2,20,0.5) 100%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.sucess  { color: var(--success) !important; font-weight: 700 !important; }
-.failure { color: var(--danger)  !important; font-weight: 700 !important; }
-.goldy   { color: var(--gold)    !important; font-weight: 700 !important; }
-
-/* ── Page layout ── */
 
 main.app {
   display: flex;
@@ -73,39 +9,16 @@ main.app {
   align-items: center;
   gap: 14px;
   padding: 20px 14px 100px;
-  overflow-y: auto;
   max-height: 100vh;
-  position: relative;
-  z-index: 1;
+  overflow-y: auto;
 }
-
-/* ── Crystal panel mixin ── */
 
 .profile-card,
-.stats-card {
-  background: var(--panel-bg) padding-box,
-              var(--panel-border-b) border-box;
-  border: 1px solid transparent;
-  clip-path: var(--clip-panel);
-  filter: drop-shadow(0 0 20px rgba(120,100,255,0.2));
-  width: 92vw;
-  position: relative;
-  isolation: isolate;
-}
+.stats-card { width: 92vw; }
 
-.profile-card::before,
-.stats-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg,
-    rgba(255,255,255,0.06) 0%, transparent 30%,
-    transparent 70%, rgba(180,140,255,0.05) 100%);
-  pointer-events: none;
-  z-index: -1;
-}
-
-/* ── Profile identity card ── */
+/* ═══════════════════════════════════════════════════════════════════
+   IDENTITY CARD
+   ═══════════════════════════════════════════════════════════════════ */
 
 .profile-card {
   padding: 36px 18px 22px;
@@ -116,26 +29,28 @@ main.app {
   color: var(--fg);
 }
 
-/* Diamond glyph avatar */
+/* Cloth sigil */
 .avatar-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
-  filter: drop-shadow(0 0 12px var(--accent));
+  color: var(--gold);
+  filter: drop-shadow(0 0 12px var(--gold-halo));
 }
 
-/* Legacy avatar img (hidden — replaced by diamond glyph) */
+/* Legacy avatar img — superseded by the cloth sigil */
 .avatar { display: none; }
 
-/* Name strip */
+/* ── Name strip ── */
+
 .top-bar {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 5px 12px;
-  border-top: 1px solid var(--accent);
-  border-bottom: 1px solid var(--accent);
-  box-shadow: 0 0 8px rgba(155,140,255,0.2);
+  border-top: 1px solid var(--gold);
+  border-bottom: 1px solid var(--gold);
+  box-shadow: 0 0 8px var(--gold-halo);
 }
 
 .top-bar h3,
@@ -151,7 +66,7 @@ main.app {
 .edit-btn {
   background: none;
   border: none;
-  color: var(--accent);
+  color: var(--gold);
   font-size: 14px;
   cursor: pointer;
   padding: 0 4px;
@@ -161,7 +76,7 @@ main.app {
 .name-input {
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--accent);
+  border-bottom: 1px solid var(--gold);
   color: var(--fg);
   font-size: 14px;
   font-family: var(--font-display);
@@ -183,7 +98,11 @@ main.app {
   padding: 0 4px;
 }
 
-/* ── Rank badge ── */
+/* ═══════════════════════════════════════════════════════════════════
+   RANK BADGE
+
+   Circular medallion. Colour comes from the .rank-* class in theme.css.
+   ═══════════════════════════════════════════════════════════════════ */
 
 .rank-badge {
   display: flex;
@@ -191,31 +110,19 @@ main.app {
   gap: 10px;
 }
 
-/* Hex-shaped rank letter — JS sets textContent and className */
-.rank-letter {
+.rank-badge .rank-letter {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 48px;
   height: 48px;
-  clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
-  background: rgba(0,0,0,0.55) padding-box,
-              currentColor border-box;
-  border: 1.5px solid transparent;
-  font-family: var(--font-display);
+  border-radius: 50%;
+  background: var(--well);
+  border: 1.6px solid currentColor;
+  box-shadow: 0 0 10px currentColor, var(--medallion-inset);
   font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--rank-e);
-  filter: drop-shadow(0 0 10px rgba(184,176,208,0.6));
+  letter-spacing: 0;
 }
-
-.rank-letter.rank-e { color: var(--rank-e); filter: drop-shadow(0 0 10px rgba(184,176,208,0.7)); }
-.rank-letter.rank-d { color: var(--rank-d); filter: drop-shadow(0 0 10px rgba(105,240,206,0.7)); }
-.rank-letter.rank-c { color: var(--rank-c); filter: drop-shadow(0 0 10px rgba(155,140,255,0.7)); }
-.rank-letter.rank-b { color: var(--rank-b); filter: drop-shadow(0 0 10px rgba(199,146,234,0.7)); }
-.rank-letter.rank-a { color: var(--rank-a); filter: drop-shadow(0 0 10px rgba(255,143,181,0.7)); }
-.rank-letter.rank-s { color: var(--rank-s); filter: drop-shadow(0 0 10px rgba(255,203,107,0.7)); }
 
 .rank-info {
   display: flex;
@@ -228,6 +135,7 @@ main.app {
   font-size: 8px;
   color: var(--fg-dim);
   letter-spacing: 0.2em;
+  text-transform: uppercase;
 }
 
 .rank-title {
@@ -239,7 +147,9 @@ main.app {
   text-transform: uppercase;
 }
 
-/* ── Level row ── */
+/* ═══════════════════════════════════════════════════════════════════
+   LEVEL + COSMO BAR
+   ═══════════════════════════════════════════════════════════════════ */
 
 .level-row {
   display: flex;
@@ -252,6 +162,7 @@ main.app {
   font-size: 9px;
   color: var(--fg-dim);
   letter-spacing: 0.2em;
+  text-transform: uppercase;
 }
 
 #profileLevel {
@@ -260,39 +171,48 @@ main.app {
   font-weight: 700;
   color: var(--gold);
   letter-spacing: 0.05em;
-  text-shadow: 0 0 14px rgba(255,203,107,0.5);
+  text-shadow: 0 0 14px var(--gold-halo);
   font-variant-numeric: tabular-nums;
 }
 
-/* Hexagonal level bar */
 #profileLevelBar {
+  position: relative;
   width: 100%;
   height: 16px;
-  background: rgba(0,0,0,0.4) padding-box,
-              rgba(255,203,107,0.75) border-box;
-  border: 1px solid transparent;
-  clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%);
-  filter: drop-shadow(0 0 8px rgba(255,203,107,0.35));
-  position: relative;
+  background: var(--track);
+  border: 1px solid var(--gold);
+  box-shadow: 0 0 10px var(--gold-halo), var(--inset-glow);
+  overflow: hidden;
 }
 
 #profileLevelProgress {
   height: 100%;
-  background: linear-gradient(90deg, var(--violet), var(--gold));
-  filter: drop-shadow(0 0 10px rgba(255,203,107,0.5));
-  text-align: center;
-  font-family: var(--font-display);
-  font-size: 8px;
-  font-weight: 700;
-  line-height: 16px;
-  color: rgba(26,8,64,0.9);
-  letter-spacing: 0.12em;
-  white-space: nowrap;
-  overflow: visible;
+  background: linear-gradient(90deg, var(--violet-bright), var(--gold));
+  box-shadow: 0 0 14px var(--gold);
   transition: width 0.5s ease;
 }
 
-/* ── Section heading ── */
+/* Overlay, not text inside the fill — see #levelLabel in index.css */
+#profileLevelLabel {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  font-family: var(--font-display);
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--fg);
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+  text-shadow: var(--label-shadow);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SECTION HEADING
+   ═══════════════════════════════════════════════════════════════════ */
 
 .section-head {
   display: flex;
@@ -304,8 +224,8 @@ main.app {
 .section-head .accent-bar {
   width: 4px;
   height: 16px;
-  background: var(--accent);
-  box-shadow: 0 0 8px var(--accent);
+  background: var(--gold);
+  box-shadow: 0 0 8px var(--gold);
   flex-shrink: 0;
 }
 
@@ -323,32 +243,32 @@ main.app {
   font-family: var(--font-display);
   font-size: 12px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--gold);
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  text-shadow: 0 0 8px rgba(155,140,255,0.4);
+  text-shadow: 0 0 8px var(--gold-halo);
 }
 
-/* Legacy .card-title */
 .card-title {
   font-family: var(--font-display);
   font-size: 10px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--gold);
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  text-shadow: 0 0 8px rgba(155,140,255,0.4);
+  text-shadow: 0 0 8px var(--gold-halo);
   margin-bottom: 14px;
 }
 
-/* ── Attributes section ── */
+/* ═══════════════════════════════════════════════════════════════════
+   ATTRIBUTES
+   ═══════════════════════════════════════════════════════════════════ */
 
 .stats-card {
   padding: 16px 18px;
   color: var(--fg);
 }
 
-/* Radar chart container */
 .radar-wrap {
   display: flex;
   justify-content: center;
@@ -356,7 +276,7 @@ main.app {
   margin-bottom: 8px;
 }
 
-/* Attribute bars (kept for JS compatibility, hidden when radar is shown) */
+/* Kept in the DOM for profil.js; the radar supersedes them visually */
 .attr-bars-hidden { display: none; }
 
 .attr-row {
@@ -368,27 +288,27 @@ main.app {
 
 .attr-label {
   width: 78px;
-  font-family: var(--font-body);
   font-size: 10px;
   color: var(--fg-muted);
   flex-shrink: 0;
   letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .attr-bar {
   flex: 1;
   height: 5px;
-  background: rgba(0,0,0,0.4);
-  border: 1px solid rgba(165,140,255,0.15);
-  clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 50%, calc(100% - 4px) 100%, 4px 100%, 0 50%);
+  background: var(--track);
+  border: 1px solid var(--gold-soft);
 }
 
 .attr-fill { height: 100%; transition: width 0.4s ease; }
 
-.strength-fill  { background: var(--attr-strength); box-shadow: 0 0 6px rgba(255,143,181,0.5); }
-.core-fill      { background: var(--attr-core);     box-shadow: 0 0 6px rgba(155,140,255,0.5); }
-.power-fill     { background: var(--attr-power);    box-shadow: 0 0 6px rgba(255,203,107,0.5); }
-.endurance-fill { background: var(--attr-endurance);box-shadow: 0 0 6px rgba(105,240,206,0.5); }
+.strength-fill  { background: var(--attr-strength);  box-shadow: 0 0 6px var(--attr-strength); }
+.core-fill      { background: var(--attr-core);      box-shadow: 0 0 6px var(--attr-core); }
+.power-fill     { background: var(--attr-power);     box-shadow: 0 0 6px var(--attr-power); }
+.endurance-fill { background: var(--attr-endurance); box-shadow: 0 0 6px var(--attr-endurance); }
+.agility-fill   { background: var(--attr-agility);   box-shadow: 0 0 6px var(--attr-agility); }
 
 .attr-val {
   width: 24px;
@@ -400,7 +320,9 @@ main.app {
   font-variant-numeric: tabular-nums;
 }
 
-/* ── Stats section ── */
+/* ═══════════════════════════════════════════════════════════════════
+   GENERAL STATS
+   ═══════════════════════════════════════════════════════════════════ */
 
 .stat {
   display: flex;
@@ -410,10 +332,10 @@ main.app {
 }
 
 .stat-label {
-  font-family: var(--font-body);
   font-size: 11px;
   color: var(--fg-muted);
   letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .stat-value {
@@ -427,71 +349,6 @@ main.app {
 
 .divider {
   height: 1px;
-  background: rgba(165,140,255,0.18);
+  background: var(--gold-soft);
 }
 
-/* ── Footer ── */
-
-footer {
-  position: fixed;
-  width: 100%;
-  bottom: 0; left: 0;
-  height: 72px;
-  background: rgba(8, 5, 26, 0.92);
-  backdrop-filter: blur(14px);
-  border-top: 1px solid rgba(165, 140, 255, 0.3);
-  box-shadow: 0 -8px 24px rgba(155,140,255,0.12);
-  z-index: 20;
-}
-
-footer nav {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-around;
-  align-items: center;
-  height: 100%;
-  padding: 8px 4px 12px;
-}
-
-footer nav a {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  text-decoration: none;
-  color: var(--fg-dim);
-  padding: 4px 12px;
-  transition: color 0.2s;
-  position: relative;
-}
-
-footer nav a .nav-icon {
-  width: 22px; height: 22px;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 1.5px;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-footer nav a .nav-label {
-  font-family: var(--font-display);
-  font-size: 8px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  font-weight: 700;
-}
-
-footer nav a.nav-active { color: var(--accent); }
-
-footer nav a.nav-active::before {
-  content: '';
-  position: absolute;
-  top: -8px; left: 50%;
-  transform: translateX(-50%);
-  width: 18px; height: 2px;
-  background: var(--accent);
-  box-shadow: 0 0 6px var(--accent);
-}
-
-footer nav a:active { color: var(--accent); }

@@ -49,7 +49,7 @@ function maybeShowNameSetup(callback: () => void): void {
   input.focus();
 
   function confirm(): void {
-    const name = input.value.trim() || 'Hunter';
+    const name = input.value.trim() || 'Saint';
     localStorage.setItem('playerName', name);
     overlay.style.display = 'none';
     callback();
@@ -105,9 +105,9 @@ function applyStreakAndPenalty(total: number, done: number): void {
 function showPenaltyModal(missed: number, penalty: number): void {
   const overlay = document.getElementById('overlay') as HTMLElement;
   const info = document.getElementById('info') as HTMLElement;
-  (info.querySelector('.banner .alert h2') as HTMLElement).textContent = 'Penalty';
+  (info.querySelector('.banner .alert h2') as HTMLElement).textContent = 'Rebuke';
   const p = info.querySelector('.banner p') as HTMLElement;
-  p.textContent = missed + ' objective' + (missed > 1 ? 's' : '') + ' unfinished yesterday. −' + penalty + ' XP. Streak reset.';
+  p.textContent = missed + ' ordeal' + (missed > 1 ? 's' : '') + ' unfinished yesterday. −' + penalty + ' Cosmo. Streak reset.';
   p.className = 'failure';
   overlay.style.display = 'block';
   info.style.display = 'block';
@@ -120,9 +120,9 @@ function showPenaltyModal(missed: number, penalty: number): void {
 function showRankUpModal(rank: RankEntry): void {
   const overlay = document.getElementById('overlay') as HTMLElement;
   const info = document.getElementById('info') as HTMLElement;
-  (info.querySelector('.banner .alert h2') as HTMLElement).textContent = 'Rank Up';
+  (info.querySelector('.banner .alert h2') as HTMLElement).textContent = 'Ascension';
   const p = info.querySelector('.banner p') as HTMLElement;
-  p.textContent = rank.rank + '-Rank · ' + rank.title + '. The system acknowledges your strength.';
+  p.textContent = rank.rank + '-Rank · ' + rank.title + '. The Sanctuary acknowledges your Cosmo.';
   p.className = 'goldy';
   info.classList.add('rank-up');
   overlay.style.display = 'block';
@@ -174,18 +174,44 @@ function seedInitialObjectives(callback?: () => void): void {
 
 // --- XP & level bar ---
 
-function refreshLevelBar(): void {
-  const xp = getTotalXP();
-  const progress = getLevelProgress(xp);
-  const bar = document.getElementById('levelProgress') as HTMLElement;
-  bar.style.width = progress + '%';
-  bar.textContent = 'Lv.' + getLevel(xp) + ' — ' + progress + '%';
+function levelBarLabel(xp: number): string {
+  return 'Lv.' + getLevel(xp) + ' — ' + getLevelProgress(xp) + '% Cosmo';
 }
 
-function updateNameTag(): void {
+// The label is a sibling overlay, not text inside the fill — a fill at 0%
+// width would clip it out of sight.
+function setLevelLabel(xp: number): void {
+  const label = document.getElementById('levelLabel');
+  if (label) label.textContent = levelBarLabel(xp);
+}
+
+function refreshLevelBar(): void {
   const xp = getTotalXP();
-  const rank = getRank(getLevel(xp));
-  (document.getElementById('nameTag') as HTMLElement).textContent = getPlayerName() + ' — ' + rank.title;
+  (document.getElementById('levelProgress') as HTMLElement).style.width = getLevelProgress(xp) + '%';
+  setLevelLabel(xp);
+}
+
+// Name sits on the left of the header; rank drives the laurel medallion on
+// the right. The medallion and title elements are absent from some test
+// fixtures, so every lookup past #nameTag is guarded.
+function updateNameTag(): void {
+  const rank = getRank(getLevel(getTotalXP()));
+  (document.getElementById('nameTag') as HTMLElement).textContent = getPlayerName();
+
+  const rankClass = 'rank-' + rank.rank.toLowerCase();
+
+  const title = document.getElementById('rankTitle');
+  if (title) {
+    title.textContent = rank.title;
+    title.className = 'rank-letter ' + rankClass;
+  }
+
+  const glyph = document.getElementById('rankGlyph');
+  if (glyph) glyph.textContent = rank.rank;
+
+  // SVG elements expose a read-only className, so set the attribute directly
+  const medallion = document.getElementById('rankMedallion');
+  if (medallion) medallion.setAttribute('class', 'rank-medallion rank-letter ' + rankClass);
 }
 
 function animateBar(fromPct: number, toPct: number, onDone?: () => void): void {
@@ -271,7 +297,7 @@ function init(): void {
             if (xpDelta > 0 && getLevel(newXP) > getLevel(oldXP)) {
               animateBar(oldProgress, 100, () => {
                 bar.style.width = '0%';
-                bar.textContent = 'Lv.' + getLevel(newXP) + ' — ' + newProgress + '%';
+                setLevelLabel(newXP);
                 animateBar(0, newProgress, () => {
                   if (getRank(getLevel(newXP)).rank !== getRank(getLevel(oldXP)).rank) {
                     showRankUpModal(getRank(getLevel(newXP)));
@@ -279,11 +305,11 @@ function init(): void {
                 });
               });
             } else if (xpDelta > 0) {
-              bar.textContent = 'Lv.' + getLevel(newXP) + ' — ' + newProgress + '%';
+              setLevelLabel(newXP);
               animateBar(oldProgress, newProgress);
             } else {
               bar.style.width = newProgress + '%';
-              bar.textContent = 'Lv.' + getLevel(newXP) + ' — ' + newProgress + '%';
+              setLevelLabel(newXP);
             }
 
             updateNameTag();

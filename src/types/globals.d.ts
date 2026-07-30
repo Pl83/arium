@@ -13,7 +13,7 @@ interface GoalConfig {
   cap: number;
 }
 
-type StatKey = 'strength' | 'core' | 'power' | 'endurance';
+type StatKey = 'strength' | 'core' | 'power' | 'endurance' | 'agility';
 type StatMap = Record<StatKey, number>;
 
 type ExerciseType = 'reps' | 'time';
@@ -86,6 +86,10 @@ interface PlayerRow {
   rank_letter: string;
   updated_at: string;
 }
+
+// ── Supabase config (set by www/js/supabase.config.js, gitignored) ─────────
+declare var SUPABASE_URL:      string;
+declare var SUPABASE_ANON_KEY: string;
 
 // ── Jest interop ───────────────────────────────────────────────────────────
 // Allows `if (typeof module !== 'undefined') { module.exports = ... }`

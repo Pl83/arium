@@ -3,12 +3,13 @@
 // fixture must be built BEFORE require() — use jest.resetModules() in beforeEach.
 
 const PROFIL_DOM = `
-  <span id="nameTag">Hunter</span>
+  <span id="nameTag">Saint</span>
   <button id="editNameBtn">✎</button>
   <span id="rankLetter">E</span>
-  <span id="rankTitle">Novice</span>
+  <span id="rankTitle">Aspirant</span>
   <span id="profileLevel">1</span>
   <div id="profileLevelProgress" style="width:0%"></div>
+  <span id="profileLevelLabel"></span>
   <span id="streakCount">0 days</span>
   <span id="totalXPDisplay">0 xp</span>
   <span id="totalCompleted">0</span>
@@ -17,6 +18,8 @@ const PROFIL_DOM = `
   <div id="bar-core" style="width:0%"></div><span id="val-core">0</span>
   <div id="bar-power" style="width:0%"></div><span id="val-power">0</span>
   <div id="bar-endurance" style="width:0%"></div><span id="val-endurance">0</span>
+  <div id="bar-agility" style="width:0%"></div><span id="val-agility">0</span>
+  <svg id="radar-chart"></svg>
 `;
 
 let profilModule: any;
@@ -35,7 +38,7 @@ beforeEach(() => {
 describe('render', () => {
   it('displays the default player name when none stored', () => {
     profilModule.render();
-    expect(document.getElementById('nameTag').textContent).toBe('Hunter');
+    expect(document.getElementById('nameTag').textContent).toBe('Saint');
   });
 
   it('displays the stored player name', () => {
@@ -47,7 +50,7 @@ describe('render', () => {
   it('shows rank E at level 1', () => {
     profilModule.render();
     expect(document.getElementById('rankLetter').textContent).toBe('E');
-    expect(document.getElementById('rankTitle').textContent).toBe('Novice');
+    expect(document.getElementById('rankTitle').textContent).toBe('Aspirant');
   });
 
   it('shows rank D at level 5', () => {
@@ -101,7 +104,7 @@ describe('render', () => {
   it('displays the total XP value', () => {
     localStorage.setItem('totalXP', '300');
     profilModule.render();
-    expect(document.getElementById('totalXPDisplay').textContent).toBe('300 xp');
+    expect(document.getElementById('totalXPDisplay').textContent).toBe('300 cosmo');
   });
 
   it('displays total completed count', () => {
@@ -127,6 +130,19 @@ describe('render', () => {
     profilModule.render();
     expect(document.getElementById('bar-power').style.width).toBe('0%');
     expect(document.getElementById('val-power').textContent).toBe('0');
+  });
+
+  it('renders 0% bar and 0 value for agility when stat is missing', () => {
+    profilModule.render();
+    expect(document.getElementById('bar-agility').style.width).toBe('0%');
+    expect(document.getElementById('val-agility').textContent).toBe('0');
+  });
+
+  it('renders attribute bar at 50% for agility at the soft cap (25 / 50)', () => {
+    localStorage.setItem('stats', JSON.stringify({ agility: 25 }));
+    profilModule.render();
+    expect(document.getElementById('bar-agility').style.width).toBe('50%');
+    expect(document.getElementById('val-agility').textContent).toBe('25');
   });
 });
 
@@ -158,11 +174,11 @@ describe('editNameBtn', () => {
     expect(localStorage.getItem('playerName')).toBe('Selene');
   });
 
-  it('defaults to "Hunter" when input is empty or whitespace', () => {
+  it('defaults to "Saint" when input is empty or whitespace', () => {
     document.getElementById('editNameBtn').click();
     (document.querySelector('.name-input') as HTMLInputElement).value = '   ';
     document.querySelector('.save-name-btn').click();
-    expect(localStorage.getItem('playerName')).toBe('Hunter');
+    expect(localStorage.getItem('playerName')).toBe('Saint');
   });
 
   it('removes the input and save button from the DOM after saving', () => {
@@ -180,3 +196,4 @@ describe('editNameBtn', () => {
     expect(localStorage.getItem('playerName')).toBeNull();
   });
 });
+

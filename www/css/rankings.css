@@ -1,75 +1,14 @@
 /* ═══════════════════════════════════════════════════════════════════
-   ARIUM — CRYSTALLINE ARCANE DARK — Rankings
+   ARIUM — SANCTUARY · RANKINGS
+   Tokens and primitives live in theme.css. Do not redeclare them here.
    ═══════════════════════════════════════════════════════════════════ */
-
-:root {
-  --bg:             #08051A;
-  --bg-grad:        radial-gradient(ellipse at 30% 10%, rgba(120,80,255,0.35) 0%, transparent 55%),
-                    radial-gradient(ellipse at 80% 90%, rgba(80,120,255,0.25) 0%, transparent 50%),
-                    radial-gradient(ellipse at 50% 50%, rgba(180,140,255,0.08) 0%, transparent 70%);
-  --panel-bg:       linear-gradient(155deg, rgba(40,30,90,0.85) 0%, rgba(20,15,55,0.78) 100%);
-  --panel-border-b: linear-gradient(135deg, rgba(200,180,255,0.5) 0%, rgba(80,60,200,0.2) 100%);
-  --fg:             #EAE0FF;
-  --fg-muted:       rgba(220, 210, 255, 0.6);
-  --fg-dim:         rgba(220, 210, 255, 0.38);
-  --accent:         #9B8CFF;
-  --gold:           #FFCB6B;
-  --gold-soft:      rgba(255, 203, 107, 0.22);
-  --success:        #69F0CE;
-  --danger:         #FF6B9B;
-  --rank-e: #B8B0D0; --rank-d: #69F0CE; --rank-c: #9B8CFF;
-  --rank-b: #C792EA; --rank-a: #FF8FB5; --rank-s: #FFCB6B;
-  --clip-panel: polygon(16px 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 16px 100%, 0 calc(100% - 16px), 0 16px);
-  --clip-panel-sm: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px);
-  --font-display: 'Cinzel', 'Times New Roman', serif;
-  --font-body:    'Manrope', system-ui, -apple-system, sans-serif;
-  --font-mono:    'JetBrains Mono', 'Consolas', ui-monospace, monospace;
-}
-
-* {
-  -webkit-tap-highlight-color: rgba(0,0,0,0);
-  margin: 0; padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  -webkit-touch-callout: none;
-  -webkit-text-size-adjust: none;
-  -webkit-user-select: none;
-  background-color: var(--bg);
-  background-image: var(--bg-grad);
-  font-family: var(--font-body);
-  font-size: 12px;
-  min-height: 100vh;
-  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
-           env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
-  color: var(--fg);
-  letter-spacing: 0.04em;
-}
-
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(ellipse at center, transparent 30%, rgba(5,2,20,0.5) 100%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.sucess  { color: var(--success) !important; font-weight: 700 !important; }
-.failure { color: var(--danger)  !important; font-weight: 700 !important; }
-.goldy   { color: var(--gold)    !important; font-weight: 700 !important; }
-
-/* ── Page layout ── */
 
 main {
   display: flex;
   flex-direction: column;
   padding: 20px 14px 100px;
-  overflow-y: auto;
   max-height: 100vh;
-  position: relative;
-  z-index: 1;
+  overflow-y: auto;
 }
 
 .app {
@@ -78,7 +17,9 @@ main {
   gap: 12px;
 }
 
-/* ── Page heading ── */
+/* ═══════════════════════════════════════════════════════════════════
+   PAGE HEADING
+   ═══════════════════════════════════════════════════════════════════ */
 
 .rankings-heading {
   display: flex;
@@ -102,14 +43,15 @@ main {
   color: var(--fg);
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  text-shadow: 0 0 14px rgba(155,140,255,0.35);
+  text-shadow: 0 0 14px var(--violet-soft);
 }
 
-/* ── Loading / empty states ── */
+/* ═══════════════════════════════════════════════════════════════════
+   LOADING / EMPTY / OFFLINE
+   ═══════════════════════════════════════════════════════════════════ */
 
 .loading-state,
 .empty-state {
-  font-family: var(--font-body);
   color: var(--fg-dim);
   font-size: 10px;
   letter-spacing: 0.12em;
@@ -118,41 +60,25 @@ main {
   text-transform: uppercase;
 }
 
-/* ── Offline badge ── */
-
 .offline-badge {
   align-self: flex-end;
   background: var(--danger);
   color: var(--bg);
   font-family: var(--font-mono);
   font-size: 9px;
+  font-weight: 700;
   letter-spacing: 0.12em;
   padding: 3px 8px;
-  clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
-  font-weight: 700;
+  text-transform: uppercase;
 }
 
-/* ── Rank section ── */
+/* ═══════════════════════════════════════════════════════════════════
+   RANK SECTION
+   ═══════════════════════════════════════════════════════════════════ */
 
 .rank-section {
-  background: var(--panel-bg) padding-box,
-              var(--panel-border-b) border-box;
-  border: 1px solid transparent;
-  clip-path: var(--clip-panel);
-  filter: drop-shadow(0 0 18px rgba(120,100,255,0.2));
   width: 100%;
-  position: relative;
-  isolation: isolate;
-  overflow: hidden; /* must be set for clipped rows inside */
-}
-
-.rank-section::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 30%, transparent 70%, rgba(180,140,255,0.04) 100%);
-  pointer-events: none;
-  z-index: -1;
+  overflow: hidden;
 }
 
 .rank-section-header {
@@ -160,7 +86,7 @@ main {
   align-items: center;
   gap: 10px;
   padding: 10px 14px;
-  border-bottom: 1px solid rgba(165,140,255,0.2);
+  border-bottom: 1px solid var(--gold-soft);
 }
 
 .rank-section-title {
@@ -168,8 +94,8 @@ main {
   font-family: var(--font-display);
   color: var(--fg);
   font-size: 11px;
-  letter-spacing: 0.18em;
   font-weight: 700;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
@@ -180,46 +106,39 @@ main {
   letter-spacing: 0.1em;
 }
 
-/* ── Rank badge letter ── */
-
-.rank-letter {
+/* Circular rank medallion — colour from the .rank-* class in theme.css */
+.rank-section-header .rank-letter {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px; height: 26px;
-  clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
-  background: rgba(0,0,0,0.55) padding-box, currentColor border-box;
-  border: 1.5px solid transparent;
-  font-family: var(--font-display);
-  font-weight: 700;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--well);
+  border: 1.4px solid currentColor;
+  box-shadow: 0 0 6px currentColor, var(--medallion-inset-sm);
   font-size: 12px;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   flex-shrink: 0;
-  color: var(--rank-e);
 }
 
-.rank-letter.rank-e { color: var(--rank-e); filter: drop-shadow(0 0 6px rgba(184,176,208,0.6)); }
-.rank-letter.rank-d { color: var(--rank-d); filter: drop-shadow(0 0 6px rgba(105,240,206,0.6)); }
-.rank-letter.rank-c { color: var(--rank-c); filter: drop-shadow(0 0 6px rgba(155,140,255,0.6)); }
-.rank-letter.rank-b { color: var(--rank-b); filter: drop-shadow(0 0 6px rgba(199,146,234,0.6)); }
-.rank-letter.rank-a { color: var(--rank-a); filter: drop-shadow(0 0 6px rgba(255,143,181,0.6)); }
-.rank-letter.rank-s { color: var(--rank-s); filter: drop-shadow(0 0 8px rgba(255,203,107,0.7)); }
-
-/* ── Leaderboard row ── */
+/* ═══════════════════════════════════════════════════════════════════
+   LEADERBOARD ROW
+   ═══════════════════════════════════════════════════════════════════ */
 
 .leaderboard-row {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  border-bottom: 1px solid rgba(165,140,255,0.08);
+  border-bottom: 1px solid var(--gold-soft);
 }
 
 .leaderboard-row:last-child { border-bottom: none; }
 
 .leaderboard-row.current-player {
   border-left: 3px solid var(--gold);
-  background: var(--gold-soft);
+  background: var(--gold-faint);
   padding-left: 11px;
 }
 
@@ -266,75 +185,9 @@ main {
 .row-xp {
   font-family: var(--font-mono);
   font-size: 10px;
-  color: var(--accent);
+  color: var(--gold);
   flex-shrink: 0;
   min-width: 58px;
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
-
-/* ── Footer ── */
-
-footer {
-  position: fixed;
-  width: 100%;
-  bottom: 0; left: 0;
-  height: 72px;
-  background: rgba(8, 5, 26, 0.92);
-  backdrop-filter: blur(14px);
-  border-top: 1px solid rgba(165, 140, 255, 0.3);
-  box-shadow: 0 -8px 24px rgba(155,140,255,0.12);
-  z-index: 20;
-}
-
-footer nav {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-around;
-  align-items: center;
-  height: 100%;
-  padding: 8px 4px 12px;
-}
-
-footer nav a {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  text-decoration: none;
-  color: var(--fg-dim);
-  padding: 4px 12px;
-  transition: color 0.2s;
-  position: relative;
-}
-
-footer nav a .nav-icon {
-  width: 22px; height: 22px;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 1.5px;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-footer nav a .nav-label {
-  font-family: var(--font-display);
-  font-size: 8px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  font-weight: 700;
-}
-
-footer nav a.nav-active { color: var(--accent); }
-
-footer nav a.nav-active::before {
-  content: '';
-  position: absolute;
-  top: -8px; left: 50%;
-  transform: translateX(-50%);
-  width: 18px; height: 2px;
-  background: var(--accent);
-  box-shadow: 0 0 6px var(--accent);
-}
-
-footer nav a:active { color: var(--accent); }

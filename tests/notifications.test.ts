@@ -172,12 +172,12 @@ describe('initNotifications — permission granted, new day', () => {
     expect(notifs.some(n => n.trigger.at.getTime() === todaySlot2At)).toBe(true);
   });
 
-  it('each notification has title "Daily Quest"', () => {
+  it('each notification has title "Daily Ordeal"', () => {
     jest.setSystemTime(new Date('2025-01-01T00:00:00'));
     makePlugin();
     initNotifications(jest.fn());
     const notifs = (global as any).cordova.plugins.notification.local.schedule.mock.calls[0][0];
-    expect(notifs.every(n => n.title === 'Daily Quest')).toBe(true);
+    expect(notifs.every(n => n.title === 'Daily Ordeal')).toBe(true);
   });
 
   it('notification texts are drawn from the message pool', () => {

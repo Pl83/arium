@@ -102,17 +102,17 @@ describe('getLevelProgress', () => {
 // ── getRank ───────────────────────────────────────────────────────────────────
 
 describe('getRank', () => {
-  it('Novice (E) at level 1',       () => { expect(getRank(1).rank).toBe('E'); });
-  it('Novice (E) at level 4',       () => { expect(getRank(4).rank).toBe('E'); });
-  it('Apprentice (D) at level 5',   () => { expect(getRank(5).rank).toBe('D'); });
-  it('Apprentice (D) at level 9',   () => { expect(getRank(9).rank).toBe('D'); });
-  it('Warrior (C) at level 10',     () => { expect(getRank(10).rank).toBe('C'); });
-  it('Champion (B) at level 20',    () => { expect(getRank(20).rank).toBe('B'); });
-  it('Hero (A) at level 35',        () => { expect(getRank(35).rank).toBe('A'); });
-  it('Legend (S) at level 50',      () => { expect(getRank(50).rank).toBe('S'); });
-  it('Legend (S) above level 50',   () => { expect(getRank(100).rank).toBe('S'); });
+  it('Aspirant (E) at level 1',       () => { expect(getRank(1).rank).toBe('E'); });
+  it('Aspirant (E) at level 4',       () => { expect(getRank(4).rank).toBe('E'); });
+  it('Bronze Saint (D) at level 5',   () => { expect(getRank(5).rank).toBe('D'); });
+  it('Bronze Saint (D) at level 9',   () => { expect(getRank(9).rank).toBe('D'); });
+  it('Silver Saint (C) at level 10',     () => { expect(getRank(10).rank).toBe('C'); });
+  it('Gold Saint (B) at level 20',    () => { expect(getRank(20).rank).toBe('B'); });
+  it('Divine Saint (A) at level 35',        () => { expect(getRank(35).rank).toBe('A'); });
+  it('God Saint (S) at level 50',      () => { expect(getRank(50).rank).toBe('S'); });
+  it('God Saint (S) above level 50',   () => { expect(getRank(100).rank).toBe('S'); });
   it('returns the full rank object', () => {
-    expect(getRank(1)).toEqual({ minLevel: 1, rank: 'E', title: 'Novice' });
+    expect(getRank(1)).toEqual({ minLevel: 1, rank: 'E', title: 'Aspirant' });
   });
 });
 
@@ -123,7 +123,9 @@ describe('statForTitle', () => {
   it('returns core for sit-up titles',        () => { expect(statForTitle('Sit-Ups [0/20]')).toBe('core'); });
   it('returns power for squat titles',        () => { expect(statForTitle('Squats [0/20]')).toBe('power'); });
   it('returns endurance for plank titles',    () => { expect(statForTitle('Plank [0/30]')).toBe('endurance'); });
+  it('returns agility for stretch titles',    () => { expect(statForTitle('Stretch [0/60]')).toBe('agility'); });
   it('returns null for unknown exercise',     () => { expect(statForTitle('Burpees')).toBeNull(); });
+  it('returns null for unrelated agility-adjacent titles', () => { expect(statForTitle('Yoga')).toBeNull(); });
   it('is case-insensitive',                   () => { expect(statForTitle('PUSH-UPS')).toBe('strength'); });
 });
 
@@ -143,8 +145,8 @@ describe('getTotalXP', () => {
 // ── getPlayerName ─────────────────────────────────────────────────────────────
 
 describe('getPlayerName', () => {
-  it('returns Hunter when playerName is not set', () => {
-    expect(getPlayerName()).toBe('Hunter');
+  it('returns Saint when playerName is not set', () => {
+    expect(getPlayerName()).toBe('Saint');
   });
 
   it('returns the stored player name', () => {

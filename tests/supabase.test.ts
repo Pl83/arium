@@ -6,6 +6,7 @@ beforeEach(() => {
   localStorage.clear();
   jest.clearAllMocks();
   jest.resetModules();
+  // SUPABASE_URL / SUPABASE_ANON_KEY are set globally in tests/setup.ts
   require('../src/shared');
   supabaseModule = require('../src/supabase');
 });
@@ -62,6 +63,22 @@ describe('upsertPlayer', () => {
 
     const options = mockFetch.mock.calls[0][1];
     expect(options.headers['Prefer']).toBe('resolution=merge-duplicates');
+  });
+
+  it('includes x-device-id header matching the player device_id (for RLS)', async () => {
+    const mockFetch = jest.fn().mockResolvedValue({ ok: true });
+    global.fetch = mockFetch;
+
+    await supabaseModule.upsertPlayer({
+      device_id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+      player_name: 'Hunter',
+      total_xp: 0,
+      level: 1,
+      rank_letter: 'E',
+    });
+
+    const options = mockFetch.mock.calls[0][1];
+    expect(options.headers['x-device-id']).toBe('aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee');
   });
 
   it('sends all player fields plus updated_at in the body', async () => {

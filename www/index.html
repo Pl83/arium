@@ -2,94 +2,106 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; media-src *; img-src 'self' data: content:;">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: https://ssl.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; media-src 'none'; img-src 'self' data: content:;">
         <meta name="format-detection" content="telephone=no">
         <meta name="msapplication-tap-highlight" content="no">
         <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover">
-        <meta name="color-scheme" content="dark">
+        <meta name="color-scheme" content="dark light">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="css/theme.css">
         <link rel="stylesheet" href="css/index.css">
         <title>ARIUM</title>
     </head>
     <body>
         <main class="app">
 
-            <!-- ── Name + Level bar ── -->
+            <!-- ── Identity + Cosmo bar ── -->
             <section id="resume">
-                <h3 id="nameTag">— Loading —</h3>
+
+                <div class="resume-head">
+                    <div class="identity">
+                        <span class="kicker">Saint</span>
+                        <h3 id="nameTag">— Loading —</h3>
+                    </div>
+
+                    <div class="rank-block">
+                        <!-- Laurel-wreathed rank medallion — colour driven by .rank-* class -->
+                        <svg id="rankMedallion" class="rank-medallion rank-letter rank-e" viewBox="0 0 60 60" fill="none" aria-hidden="true">
+                            <circle class="svg-well" cx="30" cy="30" r="25" fill="rgba(0,0,0,0.33)" stroke="currentColor" stroke-width="1.6"/>
+                            <circle cx="30" cy="30" r="20" fill="none" stroke="currentColor" stroke-width="0.6" opacity="0.5"/>
+                            <path d="M10 38c4 6 9 9 9 9M9 33c5 5 11 7 11 7" fill="none" stroke="currentColor" stroke-width="1.3" opacity="0.7"/>
+                            <path d="M50 38c-4 6-9 9-9 9M51 33c-5 5-11 7-11 7" fill="none" stroke="currentColor" stroke-width="1.3" opacity="0.7"/>
+                            <text id="rankGlyph" x="30" y="38" text-anchor="middle" font-size="22" font-weight="700" fill="currentColor" font-family="'Cinzel',serif">E</text>
+                        </svg>
+
+                        <div class="rank-meta">
+                            <span class="kicker">Rank</span>
+                            <span id="rankTitle" class="rank-letter rank-e">—</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="levelBar">
-                    <div id="levelProgress" style="width:0%">Lv.1 — 0%</div>
+                    <div id="levelProgress" style="width:0%"></div>
+                    <div class="level-ticks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+                    <span id="levelLabel">Lv.1 — 0% Cosmo</span>
                 </div>
             </section>
 
-            <!-- ── Daily Quest panel ── -->
+            <!-- ── Daily Ordeal panel ── -->
             <section class="popup">
 
-                <!-- Floating diamond above panel -->
-                <div class="popup-diamond-top" aria-hidden="true">
-                    <svg width="28" height="32" viewBox="0 0 40 46" fill="none">
-                        <path d="M20 2L38 16L30 44H10L2 16L20 2z" stroke="#9B8CFF" stroke-width="1.5" fill="rgba(155,140,255,0.1)"/>
-                        <path d="M20 2L20 44M2 16L38 16M10 44L20 16L30 44" stroke="#9B8CFF" stroke-width="0.8" opacity="0.6" fill="none"/>
-                        <path d="M16 8L24 8L20 16L16 8z" fill="#9B8CFF" opacity="0.3"/>
-                    </svg>
-                </div>
-
-                <!-- Quest header -->
+                <!-- Ordeal header -->
                 <div class="quest-title-row">
-                    <svg class="sigil-icon" width="14" height="14" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-                        <circle cx="16" cy="16" r="14" stroke="#9B8CFF" stroke-width="1.5"/>
-                        <path d="M16 7L25 23H7L16 7z" stroke="#9B8CFF" stroke-width="1.5"/>
-                        <circle cx="16" cy="19" r="1.5" fill="#9B8CFF"/>
+                    <svg class="sigil-icon" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                        <circle cx="16" cy="16" r="13.5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+                        <path d="M16 8l2.2 5.4L24 15l-4.4 3.3 1.6 5.7L16 20.8l-5.2 3.2 1.6-5.7L8 15l5.8-1.6L16 8z" fill="currentColor"/>
                     </svg>
-                    <h2>Daily Quest</h2>
+                    <h2>Daily Ordeal</h2>
                 </div>
-                <p class="quest-subtitle">Train to become a formidable combatant</p>
+                <p class="quest-subtitle">Train daily to burn your Cosmo brighter</p>
 
-                <!-- Boss sigil — fills as objectives complete -->
+                <!-- Cosmo medallion — fills as ordeals are met -->
                 <div class="boss-sigil-wrap" aria-hidden="true">
-                    <svg class="sigil-svg" width="80" height="92" viewBox="0 0 80 92">
+                    <svg class="sigil-svg" width="82" height="82" viewBox="0 0 82 82">
                         <defs>
-                            <linearGradient id="bsg" x1="0" y1="0" x2="0" y2="1">
-                                <stop id="bsg-stop1" offset="100%" stop-color="#9B8CFF" stop-opacity="0"/>
-                                <stop id="bsg-stop2" offset="100%" stop-color="#9B8CFF" stop-opacity="0.6"/>
+                            <!-- y1=1 → y2=0 : the fill rises from the bottom -->
+                            <linearGradient id="csg" x1="0" y1="1" x2="0" y2="0">
+                                <stop id="csg-stop1" offset="0%" stop-color="currentColor" stop-opacity="0.55"/>
+                                <stop id="csg-stop2" offset="0%" stop-color="currentColor" stop-opacity="0"/>
                             </linearGradient>
                         </defs>
-                        <!-- Outer faceted diamond -->
-                        <path id="sigil-outer" d="M40 4L74 30L60 88H20L6 30L40 4z" stroke="#9B8CFF" stroke-width="1.5" fill="rgba(0,0,0,0.4)"/>
-                        <!-- Inner facet lines -->
-                        <path id="sigil-inner" d="M40 4L40 88M6 30L74 30M20 88L40 30L60 88" stroke="#9B8CFF" stroke-width="0.8" opacity="0.5" fill="none"/>
-                        <!-- Fill gradient -->
-                        <path d="M40 4L74 30L60 88H20L6 30L40 4z" fill="url(#bsg)"/>
-                        <!-- Count / total -->
-                        <text id="sigil-count" x="40" y="58" text-anchor="middle" font-size="22" fill="#9B8CFF" font-weight="700" font-family="'Cinzel',serif">0</text>
-                        <text id="sigil-total" x="40" y="75" text-anchor="middle" font-size="9" fill="rgba(220,210,255,0.6)" letter-spacing="2" font-family="'Cinzel',serif">/4</text>
+                        <circle class="svg-well" cx="41" cy="41" r="34" fill="rgba(0,0,0,0.35)" stroke="currentColor" stroke-width="1.4"/>
+                        <circle cx="41" cy="41" r="34" fill="url(#csg)"/>
+                        <circle cx="41" cy="41" r="27" fill="none" stroke="currentColor" stroke-width="0.6" opacity="0.5"/>
+                        <text id="sigil-count" x="41" y="47" text-anchor="middle" font-size="20" font-weight="700" fill="currentColor" font-family="'Cinzel',serif">0</text>
+                        <text id="sigil-total" x="41" y="60" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.6" letter-spacing="2" font-family="'Cinzel',serif">/5</text>
                     </svg>
                 </div>
 
-                <!-- Quest list — populated by init() -->
+                <!-- Ordeal list — populated by init() -->
                 <div class="center">
-                    <h3 class="sucess">Objectives</h3>
+                    <h3 class="sucess">Ordeals</h3>
                     <ul>
                         <!-- populated by init() -->
                     </ul>
-                    <p><span class="failure">Caution!</span> Incomplete quests carry penalties.</p>
+                    <p><span class="failure">Beware:</span> Unfinished ordeals invite the gods' rebuke.</p>
                 </div>
 
             </section><!-- .popup -->
 
         </main><!-- .app -->
 
-        <!-- ── Penalty / rank-up modal ── -->
+        <!-- ── Rebuke / Ascension modal ── -->
         <div id="overlay" style="display:none;"></div>
         <div id="info" style="display:none;">
             <div class="banner">
                 <div class="alert">
-                    <!-- Diamond glyph replaces alert.svg -->
-                    <svg width="16" height="16" viewBox="0 0 40 46" fill="none" aria-hidden="true">
-                        <path d="M20 2L38 16L30 44H10L2 16L20 2z" stroke="currentColor" stroke-width="1.8" fill="rgba(255,255,255,0.06)"/>
-                        <path d="M20 2L20 44M2 16L38 16M10 44L20 16L30 44" stroke="currentColor" stroke-width="1" opacity="0.6" fill="none"/>
+                    <svg width="16" height="16" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+                        <circle cx="16" cy="16" r="13.5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+                        <path d="M16 8l2.2 5.4L24 15l-4.4 3.3 1.6 5.7L16 20.8l-5.2 3.2 1.6-5.7L8 15l5.8-1.6L16 8z" fill="currentColor"/>
                     </svg>
                     <h2>Alert</h2>
                 </div>
@@ -100,17 +112,17 @@
         <!-- ── Footer nav ── -->
         <footer>
             <nav>
-                <a href="trial.html">
-                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2M15 5l4-4 2 2-4 4"/>
-                    </svg>
-                    <span class="nav-label">Trials</span>
-                </a>
                 <a href="index.html" class="nav-active">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/>
                     </svg>
                     <span class="nav-label">Home</span>
+                </a>
+                <a href="trial.html">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2M15 5l4-4 2 2-4 4"/>
+                    </svg>
+                    <span class="nav-label">Ordeals</span>
                 </a>
                 <a href="rankings.html">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -120,27 +132,26 @@
                 </a>
                 <a href="profile.html">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M12 2l8 3v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V5l8-3z"/>
+                        <path d="M12 2l8 3v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V5l8-3z M9 12l2 2 4-4"/>
                     </svg>
                     <span class="nav-label">Profile</span>
                 </a>
             </nav>
         </footer>
 
-        <!-- ── First-run name setup ── -->
+        <!-- ── First-run registration ── -->
         <div id="name-setup" style="display:none;">
             <div class="name-setup-card">
                 <div class="name-setup-content">
                     <div class="alert">
                         <svg width="16" height="16" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-                            <circle cx="16" cy="16" r="14" stroke="#9B8CFF" stroke-width="1.5"/>
-                            <path d="M16 7L25 23H7L16 7z" stroke="#9B8CFF" stroke-width="1.5"/>
-                            <circle cx="16" cy="19" r="1.5" fill="#9B8CFF"/>
+                            <circle cx="16" cy="16" r="13.5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+                            <path d="M16 8l2.2 5.4L24 15l-4.4 3.3 1.6 5.7L16 20.8l-5.2 3.2 1.6-5.7L8 15l5.8-1.6L16 8z" fill="currentColor"/>
                         </svg>
-                        <h2>Hunter Registration</h2>
+                        <h2>Saint Registration</h2>
                     </div>
-                    <p>Enter your designation, Hunter</p>
-                    <input type="text" id="name-setup-input" maxlength="20" placeholder="Hunter" autocomplete="off">
+                    <p>Enter your designation, Saint</p>
+                    <input type="text" id="name-setup-input" maxlength="20" placeholder="Saint" autocomplete="off">
                     <button id="name-setup-btn">Begin</button>
                 </div>
             </div>

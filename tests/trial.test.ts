@@ -135,7 +135,7 @@ describe('showExerciseList', () => {
   it('renders the picker heading', () => {
     trialModule.showExerciseList();
     expect(document.querySelector('.picker-heading').textContent)
-      .toBe('Choose Your Trial');
+      .toBe('Choose Your Ordeal');
   });
 
   it('renders the Solo tab as active by default', () => {
@@ -189,9 +189,9 @@ describe('showConfigure', () => {
     expect(document.querySelector('.trial-heading').textContent).toBe('Push-Ups');
   });
 
-  it('renders the XP preview element', () => {
+  it('renders the Cosmo preview element', () => {
     trialModule.showConfigure(PUSHUP_EX);
-    expect(document.getElementById('xp-preview').textContent).toContain('XP');
+    expect(document.getElementById('xp-preview').textContent).toContain('Cosmo');
   });
 
   it('decrements sets on − click (minimum 1)', () => {
@@ -236,13 +236,13 @@ describe('showConfigure', () => {
     expect(getS().target).toBe(5);
   });
 
-  it('Start Trial button calls startSolo and shows the rep screen', () => {
+  it('Begin Ordeal button calls startSolo and shows the rep screen', () => {
     trialModule.showConfigure(PUSHUP_EX);
     document.querySelector('.trial-btn:not(.secondary)').click();
     expect(document.getElementById('rep-num')).toBeTruthy();
   });
 
-  it('Start Trial with timed exercise shows the timer screen', () => {
+  it('Begin Ordeal with timed exercise shows the timer screen', () => {
     trialModule.showConfigure(PLANK_EX);
     document.querySelector('.trial-btn:not(.secondary)').click();
     expect(document.getElementById('timer-display')).toBeTruthy();
@@ -629,10 +629,10 @@ describe('showComplete', () => {
     expect(parseInt(localStorage.getItem('totalXP'))).toBe(40); // 10 + 3*10
   });
 
-  it('renders "Trial Complete!" heading', () => {
+  it('renders "Ordeal Complete!" heading', () => {
     setS({ mode: 'solo', ex: PUSHUP_EX, sets: 3, target: 20, setsCompleted: 1 });
     trialModule.showComplete();
-    expect(document.querySelector('.sucess').textContent).toBe('Trial Complete!');
+    expect(document.querySelector('.sucess').textContent).toBe('Ordeal Complete!');
   });
 
   it('Again button returns to showConfigure for the same exercise', () => {

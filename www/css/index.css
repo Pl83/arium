@@ -1,90 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════
-   ARIUM — CRYSTALLINE ARCANE DARK
-   Design token reference: V2_DARK from design bundle
+   ARIUM — SANCTUARY · HOME
+   Tokens and primitives live in theme.css. Do not redeclare them here.
    ═══════════════════════════════════════════════════════════════════ */
-
-:root {
-  --bg:             #08051A;
-  --bg-grad:        radial-gradient(ellipse at 30% 10%, rgba(120,80,255,0.35) 0%, transparent 55%),
-                    radial-gradient(ellipse at 80% 90%, rgba(80,120,255,0.25) 0%, transparent 50%),
-                    radial-gradient(ellipse at 50% 50%, rgba(180,140,255,0.08) 0%, transparent 70%);
-  --panel-bg:       linear-gradient(155deg, rgba(40,30,90,0.85) 0%, rgba(20,15,55,0.78) 100%);
-  --panel-solid:    #170B35;
-  --panel-border-c: rgba(165, 140, 255, 0.35);
-  --panel-border-b: linear-gradient(135deg, rgba(200,180,255,0.5) 0%, rgba(80,60,200,0.2) 100%);
-  --panel-glow:     0 0 40px rgba(120,100,255,0.2);
-  --fg:             #EAE0FF;
-  --fg-muted:       rgba(220, 210, 255, 0.6);
-  --fg-dim:         rgba(220, 210, 255, 0.38);
-  --accent:         #9B8CFF;
-  --accent-soft:    rgba(155, 140, 255, 0.2);
-  --gold:           #FFCB6B;
-  --gold-soft:      rgba(255, 203, 107, 0.22);
-  --success:        #69F0CE;
-  --danger:         #FF6B9B;
-  --violet:         #C792EA;
-  --attr-strength:  #FF8FB5;
-  --attr-core:      #9B8CFF;
-  --attr-power:     #FFCB6B;
-  --attr-endurance: #69F0CE;
-  --rank-e: #B8B0D0; --rank-d: #69F0CE; --rank-c: #9B8CFF;
-  --rank-b: #C792EA; --rank-a: #FF8FB5; --rank-s: #FFCB6B;
-  --clip-panel: polygon(16px 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 16px 100%, 0 calc(100% - 16px), 0 16px);
-  --clip-btn:   polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
-  --clip-xp:    polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%);
-  --font-display: 'Cinzel', 'Times New Roman', serif;
-  --font-body:    'Manrope', system-ui, -apple-system, sans-serif;
-  --font-mono:    'JetBrains Mono', 'Consolas', ui-monospace, monospace;
-}
-
-/* ── Reset ── */
-
-* {
-  -webkit-tap-highlight-color: rgba(0,0,0,0);
-  margin: 0; padding: 0;
-  box-sizing: border-box;
-}
-
-/* ── Base ── */
-
-body {
-  -webkit-touch-callout: none;
-  -webkit-text-size-adjust: none;
-  -webkit-user-select: none;
-  background-color: var(--bg);
-  background-image: var(--bg-grad);
-  font-family: var(--font-body);
-  font-size: 12px;
-  min-height: 100vh;
-  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
-           env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
-  color: var(--fg);
-  letter-spacing: 0.02em;
-}
-
-/* Vignette overlay */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(ellipse at center, transparent 30%, rgba(5,2,20,0.5) 100%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* ── State classes (JS-applied) ── */
-
-.striked {
-  text-decoration: line-through;
-  text-decoration-thickness: 1.5px;
-  text-decoration-color: var(--success);
-  color: rgba(105, 240, 206, 0.55) !important;
-}
-.sucess  { color: var(--success) !important; font-weight: 700 !important; }
-.failure { color: var(--danger)  !important; font-weight: 700 !important; }
-.goldy   { color: var(--gold)    !important; font-weight: 700 !important; }
-
-/* ── App layout ── */
 
 main.app {
   display: flex;
@@ -92,30 +9,34 @@ main.app {
   align-items: center;
   padding: 16px 14px 100px;
   gap: 16px;
-  min-height: calc(100vh - 0px);
-  overflow-y: auto;
+  min-height: 100vh;
   max-height: 100vh;
-  position: relative;
-  z-index: 1;
+  overflow-y: auto;
 }
 
-/* ── Name + Level bar ── */
+/* ═══════════════════════════════════════════════════════════════════
+   HEADER — identity left, rank right
+   ═══════════════════════════════════════════════════════════════════ */
 
 #resume {
-  position: static;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
 }
 
-#resume::before {
-  content: 'HUNTER';
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  color: var(--fg-dim);
-  letter-spacing: 0.2em;
+.resume-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 #nameTag {
@@ -123,67 +44,103 @@ main.app {
   font-size: 18px;
   font-weight: 700;
   color: var(--fg);
-  letter-spacing: 0.12em;
-  text-shadow: 0 0 14px rgba(155,140,255,0.4);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  text-shadow: 0 0 14px var(--violet-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Hexagonal XP bar */
+.rank-block {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.rank-medallion {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  transition: filter 0.4s;
+}
+
+.rank-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-end;
+}
+
+#rankTitle {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   COSMO BAR
+   ═══════════════════════════════════════════════════════════════════ */
+
 #levelBar {
+  position: relative;
   width: 100%;
   height: 18px;
-  background: rgba(0,0,0,0.4) padding-box,
-              rgba(255,203,107,0.75) border-box;
-  border: 1px solid transparent;
-  clip-path: var(--clip-xp);
-  filter: drop-shadow(0 0 8px rgba(255,203,107,0.35));
-  position: relative;
+  background: var(--track);
+  border: 1px solid var(--gold);
+  box-shadow: 0 0 10px var(--gold-halo), var(--inset-glow);
+  overflow: hidden;
 }
 
 #levelProgress {
   height: 100%;
-  background: linear-gradient(90deg, var(--violet), var(--gold));
-  filter: drop-shadow(0 0 10px rgba(255,203,107,0.5));
+  background: linear-gradient(90deg, var(--violet-bright), var(--gold));
+  box-shadow: 0 0 14px var(--gold);
   transition: width 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* The label rides above the whole bar rather than inside the fill — a fill at
+   0% would otherwise clip it away. --fg with a shadow stays legible over both
+   the gold fill and the bare track, which the comp's dark ink does not. */
+#levelLabel {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
   font-family: var(--font-display);
+  font-size: 9px;
   font-weight: 700;
-  font-size: 8px;
-  color: rgba(26, 8, 64, 0.95);
-  letter-spacing: 0.15em;
+  color: var(--fg);
+  letter-spacing: 0.1em;
   white-space: nowrap;
-  overflow: visible;
+  text-shadow: var(--label-shadow);
 }
 
-/* ── Crystal Panel mixin ── */
-
-.popup,
-.name-setup-card {
-  background: var(--panel-bg) padding-box,
-              var(--panel-border-b) border-box;
-  border: 1px solid transparent;
-  clip-path: var(--clip-panel);
-  filter: drop-shadow(0 0 20px rgba(120,100,255,0.25));
-  position: relative;
-  isolation: isolate;
-}
-
-/* Faceted highlight */
-.popup::before,
-.name-setup-card::before {
-  content: '';
+/* Four segment dividers laid over the bar */
+.level-ticks {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg,
-    rgba(255,255,255,0.06) 0%, transparent 30%,
-    transparent 70%, rgba(180,140,255,0.05) 100%);
+  display: flex;
   pointer-events: none;
-  z-index: -1;
 }
 
-/* ── Daily Quest panel ── */
+.level-ticks i {
+  flex: 1;
+  border-right: 1px solid var(--track-tick);
+}
+
+.level-ticks i:last-child { border-right: none; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   DAILY ORDEAL PANEL
+   ═══════════════════════════════════════════════════════════════════ */
 
 .popup {
   width: 92vw;
@@ -194,92 +151,93 @@ main.app {
   gap: 14px;
 }
 
-/* Diamond glyph floating above panel (absolute positioned) */
-.popup-diamond-top {
-  position: absolute;
-  top: -18px;
-  left: 50%;
-  transform: translateX(-50%);
-  filter: drop-shadow(0 0 10px var(--accent));
-}
-
-/* Quest-complete state */
+/* All ordeals met — the panel turns green */
 .popup.quest-complete {
-  background:
-    linear-gradient(155deg, rgba(25,70,55,0.9) 0%, rgba(10,45,35,0.85) 100%) padding-box,
-    linear-gradient(135deg, rgba(105,240,206,0.6) 0%, rgba(40,150,100,0.25) 100%) border-box;
-  filter: drop-shadow(0 0 24px rgba(105,240,206,0.35));
+  border-color: var(--success);
+  box-shadow: 0 0 24px rgba(127,224,184,0.28), inset 0 1px 0 rgba(127,224,184,0.10);
 }
 
-/* Quest header row */
+.popup.quest-complete::before { background-color: var(--success); }
+
 .quest-title-row {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 4px 14px;
-  border-top: 1px solid var(--accent);
-  border-bottom: 1px solid var(--accent);
+  border-top: 1px solid var(--gold);
+  border-bottom: 1px solid var(--gold);
   white-space: nowrap;
+  color: var(--gold);
 }
 
 .quest-title-row h2 {
   font-family: var(--font-display);
   font-size: 11px;
   font-weight: 700;
-  color: var(--accent);
-  letter-spacing: 0.25em;
+  color: var(--gold);
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  text-shadow: 0 0 10px rgba(155,140,255,0.6);
+  text-shadow: 0 0 10px var(--gold);
+}
+
+.quest-title-row .sigil-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 
 .quest-subtitle {
-  font-family: var(--font-body);
   font-size: 10px;
   color: var(--fg-muted);
   text-align: center;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-/* Boss sigil */
+/* ── Cosmo medallion ── */
+
 .boss-sigil-wrap {
   display: flex;
   justify-content: center;
 }
 
 .sigil-svg {
-  filter: drop-shadow(0 0 14px var(--accent));
-  transition: filter 0.5s;
+  color: var(--gold);
+  filter: drop-shadow(0 0 12px var(--gold));
+  transition: filter 0.5s, color 0.5s;
 }
 
-/* ── Objectives list (.center) ── */
+/* Every ordeal met */
+.sigil-svg.sigil-complete {
+  color: var(--success);
+  filter: drop-shadow(0 0 18px var(--success));
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ORDEAL LIST
+   ═══════════════════════════════════════════════════════════════════ */
 
 .center {
-  position: static;
   width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 6px;
 }
 
-/* "Objectives" / complete heading */
+/* "ORDEALS — 1/4" */
 .center h3 {
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 0.18em;
-  color: var(--fg-muted);
   font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--fg-muted);
   text-transform: uppercase;
-  align-self: flex-start;
 }
 
-.center h3.sucess {
-  color: var(--success) !important;
-}
+.center h3.sucess { color: var(--success) !important; }
 
 .center ul {
   width: 100%;
-  padding: 0;
   display: flex;
   flex-direction: column;
 }
@@ -295,22 +253,22 @@ main.app {
   min-height: 44px;
   cursor: pointer;
   touch-action: manipulation;
-  border-bottom: 1px solid rgba(165, 140, 255, 0.15);
+  border-bottom: 1px solid var(--gold-soft);
   transition: background 0.1s;
 }
 
 .center li:last-child { border-bottom: none; }
+.center li:active { background: var(--gold-faint); }
 
-.center li:active { background: rgba(155,140,255,0.06); }
-
-/* Diamond bullet */
+/* Glowing status dot */
 .center li::before {
   content: '';
   display: inline-block;
-  width: 6px; height: 6px;
-  transform: rotate(45deg);
-  background: var(--accent);
-  box-shadow: 0 0 6px var(--accent);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--attr-strength);
+  box-shadow: 0 0 6px var(--attr-strength);
   flex-shrink: 0;
   margin-right: 10px;
   transition: background 0.2s, box-shadow 0.2s;
@@ -321,88 +279,70 @@ main.app {
   box-shadow: 0 0 6px var(--success);
 }
 
-/* Quest name */
+/* Ordeal name */
 .center li span:first-child {
   text-align: left;
   flex: 1;
-  font-family: var(--font-body);
   font-size: 11px;
   color: var(--fg);
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
-/* Quest counter */
+/* Ordeal counter — [ 0 / 42 ] */
 .center li span:last-child {
   font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--accent);
+  color: var(--gold);
   white-space: nowrap;
   padding-left: 8px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   font-variant-numeric: tabular-nums;
 }
 
-.center li .striked + span {
-  color: rgba(105,240,206,0.65);
-}
+.center li .striked + span { color: var(--success-mut); }
 
-/* Quest caution footer */
+/* Warning footer */
 .center > p {
-  font-family: var(--font-body);
   font-size: 9px;
   color: var(--fg-muted);
   text-align: center;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.6;
 }
 
-/* ── Overlay / modal ── */
+/* ═══════════════════════════════════════════════════════════════════
+   MODAL — rebuke / ascension
+   ═══════════════════════════════════════════════════════════════════ */
 
 #overlay {
   position: fixed;
   inset: 0;
-  background: rgba(5, 2, 20, 0.82);
+  background: var(--scrim);
+  -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
   z-index: 5;
 }
+
 
 #info {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: var(--panel-bg) padding-box,
-              var(--panel-border-b) border-box;
-  border: 1.5px solid transparent;
-  clip-path: var(--clip-panel);
-  filter: drop-shadow(0 0 30px rgba(120,100,255,0.35));
   width: 76vw;
   min-height: 20vh;
-  height: auto;
   z-index: 10;
   color: var(--fg);
-  isolation: isolate;
+  border-color: var(--danger);
 }
 
-#info::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg,
-    rgba(255,255,255,0.06) 0%, transparent 30%,
-    transparent 70%, rgba(180,140,255,0.05) 100%);
-  pointer-events: none;
-  z-index: -1;
-}
+#info::before { background-color: var(--danger); }
 
-#info.rank-up {
-  border: 1.5px solid transparent;
-  background: var(--panel-bg) padding-box,
-              linear-gradient(135deg, rgba(255,203,107,0.6) 0%, rgba(160,100,0,0.25) 100%) border-box;
-  filter: drop-shadow(0 0 32px rgba(255,203,107,0.4));
-}
+#info.rank-up { border-color: var(--gold); }
+#info.rank-up::before { background-color: var(--gold); }
 
-/* Modal content */
 #info .banner {
   display: flex;
   flex-direction: column;
@@ -422,10 +362,12 @@ main.app {
   padding: 4px 14px;
   border-top: 1px solid var(--danger);
   border-bottom: 1px solid var(--danger);
+  color: var(--danger);
 }
 
 #info.rank-up .banner .alert {
   border-color: var(--gold);
+  color: var(--gold);
 }
 
 #info .banner .alert h2 {
@@ -433,101 +375,32 @@ main.app {
   font-size: 13px;
   font-weight: 700;
   color: var(--danger);
-  letter-spacing: 0.25em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  text-shadow: 0 0 12px rgba(255,107,155,0.5);
+  text-shadow: 0 0 12px var(--danger);
 }
 
 #info.rank-up .banner .alert h2 {
   color: var(--gold);
-  text-shadow: 0 0 12px rgba(255,203,107,0.5);
+  text-shadow: 0 0 12px var(--gold);
 }
 
 #info .banner p {
-  font-family: var(--font-body);
   font-size: 11px;
   color: var(--fg);
   line-height: 1.7;
   text-align: center;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
 }
 
-/* ── Footer nav ── */
-
-footer {
-  position: fixed;
-  width: 100%;
-  bottom: 0; left: 0;
-  height: 72px;
-  background: rgba(8, 5, 26, 0.92);
-  backdrop-filter: blur(14px);
-  border-top: 1px solid rgba(165, 140, 255, 0.3);
-  box-shadow: 0 -8px 24px rgba(155,140,255,0.12);
-  z-index: 20;
-}
-
-footer nav {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-around;
-  align-items: center;
-  height: 100%;
-  padding: 8px 4px 12px;
-}
-
-footer nav a {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  text-decoration: none;
-  color: var(--fg-dim);
-  padding: 4px 12px;
-  transition: color 0.2s;
-  position: relative;
-}
-
-footer nav a .nav-icon {
-  width: 22px; height: 22px;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 1.5px;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  transition: stroke 0.2s;
-}
-
-footer nav a .nav-label {
-  font-family: var(--font-display);
-  font-size: 8px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  font-weight: 700;
-}
-
-footer nav a.nav-active {
-  color: var(--accent);
-}
-
-footer nav a.nav-active::before {
-  content: '';
-  position: absolute;
-  top: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 18px; height: 2px;
-  background: var(--accent);
-  box-shadow: 0 0 6px var(--accent);
-}
-
-footer nav a:active { color: var(--accent); opacity: 1; }
-
-/* ── Name-setup overlay ── */
+/* ═══════════════════════════════════════════════════════════════════
+   FIRST-RUN REGISTRATION
+   ═══════════════════════════════════════════════════════════════════ */
 
 #name-setup {
   position: fixed;
   inset: 0;
-  background: var(--bg);
+  background-color: var(--bg);
   background-image: var(--bg-grad);
   z-index: 20;
   display: flex;
@@ -537,7 +410,7 @@ footer nav a:active { color: var(--accent); opacity: 1; }
 
 .name-setup-card {
   width: 84vw;
-  padding: 40px 24px 40px;
+  padding: 40px 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -557,8 +430,9 @@ footer nav a:active { color: var(--accent); opacity: 1; }
   align-items: center;
   gap: 8px;
   padding: 4px 12px;
-  border-top: 1px solid var(--accent);
-  border-bottom: 1px solid var(--accent);
+  border-top: 1px solid var(--gold);
+  border-bottom: 1px solid var(--gold);
+  color: var(--gold);
 }
 
 .name-setup-content h2 {
@@ -566,24 +440,22 @@ footer nav a:active { color: var(--accent); opacity: 1; }
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.2em;
-  color: var(--accent);
-  text-shadow: 0 0 10px rgba(155,140,255,0.5);
+  color: var(--gold);
+  text-shadow: 0 0 10px var(--gold);
   text-transform: uppercase;
 }
 
 .name-setup-content > p {
-  font-family: var(--font-body);
   font-size: 10px;
   color: var(--fg-muted);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 #name-setup-input {
   width: 100%;
-  background: rgba(0,0,0,0.4);
-  background: rgba(0,0,0,0.4) padding-box,
-              rgba(165,140,255,0.4) border-box;
-  border: 1px solid transparent;
+  background: var(--track);
+  border: 1px solid var(--gold-soft);
   color: var(--fg);
   font-family: var(--font-display);
   font-size: 16px;
@@ -594,41 +466,20 @@ footer nav a:active { color: var(--accent); opacity: 1; }
   outline: none;
   -webkit-user-select: text;
   user-select: text;
-  clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px);
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 #name-setup-input:focus {
-  background: rgba(0,0,0,0.4) padding-box,
-              rgba(155,140,255,0.8) border-box;
-  filter: drop-shadow(0 0 8px rgba(155,140,255,0.4));
+  border-color: var(--gold);
+  box-shadow: 0 0 10px var(--gold-halo);
 }
 
-#name-setup-btn {
-  width: 100%;
-  padding: 13px;
-  background: transparent;
-  background: transparent padding-box,
-              rgba(155,140,255,0.6) border-box;
-  border: 1px solid transparent;
-  color: var(--accent);
-  font-family: var(--font-display);
-  font-size: 12px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  font-weight: 700;
-  cursor: pointer;
-  filter: drop-shadow(0 0 8px rgba(155,140,255,0.3));
-  clip-path: var(--clip-btn);
-  transition: filter 0.15s, color 0.15s;
-}
+#name-setup-btn { width: 100%; }
 
-#name-setup-btn:active {
-  background: rgba(155,140,255,0.15) padding-box,
-              rgba(155,140,255,0.8) border-box;
-  filter: drop-shadow(0 0 14px rgba(155,140,255,0.6));
-}
+/* ═══════════════════════════════════════════════════════════════════
+   LANDSCAPE
+   ═══════════════════════════════════════════════════════════════════ */
 
-/* ── Landscape ── */
 @media screen and (min-aspect-ratio: 1/1) and (min-width: 400px) {
   main.app { padding: 16px 24px 100px; }
 }

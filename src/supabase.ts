@@ -1,5 +1,6 @@
-const SUPABASE_URL      = 'https://llqqjocifvxjbwzspkrt.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxscXFqb2NpZnZ4amJ3enNwa3J0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMTUwMzEsImV4cCI6MjA5NDc5MTAzMX0.0YdpODP0xdHEIX0Jf3cPzHgRj51BzJvBDDlremnjzxM';
+// SUPABASE_URL and SUPABASE_ANON_KEY are globals injected at runtime by
+// www/js/supabase.config.js (gitignored — copy from supabase.config.example.js).
+// They are declared as ambient globals in src/types/globals.d.ts.
 
 const SUPABASE_HEADERS: Record<string, string> = {
   'apikey': SUPABASE_ANON_KEY,
@@ -10,7 +11,11 @@ const SUPABASE_HEADERS: Record<string, string> = {
 async function upsertPlayer(data: Omit<PlayerRow, 'updated_at'>): Promise<void> {
   await fetch(SUPABASE_URL + '/rest/v1/players', {
     method: 'POST',
-    headers: { ...SUPABASE_HEADERS, 'Prefer': 'resolution=merge-duplicates' },
+    headers: {
+      ...SUPABASE_HEADERS,
+      'Prefer':      'resolution=merge-duplicates',
+      'x-device-id': data.device_id,  // matched by the RLS "own write/update" policies
+    },
     body: JSON.stringify({ ...data, updated_at: new Date().toISOString() }),
   });
 }

@@ -23,7 +23,10 @@ const SOLO_EXERCISES: Exercise[] = [
   { name: 'Burpees',      type: 'reps', scale: { base: 8,  step: 1, cap: 30 }, step: 1,  min: 4,  stat: 'power'    },
   { name: 'Lunges',       type: 'reps', scale: { base: 15, step: 2, cap: 55 }, step: 2,  min: 6,  stat: 'power'    },
   { name: 'Dips',         type: 'reps', scale: { base: 10, step: 1, cap: 35 }, step: 1,  min: 5,  stat: 'strength' },
-  { name: 'Mt. Climbers', type: 'time', scale: { base: 20, step: 3, cap: 75 }, step: 5,  min: 10, stat: 'endurance' },
+  { name: 'Mt. Climbers',   type: 'time', scale: { base: 20, step: 3, cap: 75 }, step: 5,  min: 10, stat: 'endurance' },
+  { name: 'Stretch',        type: 'time', cfgIdx: 4,                             step: 15, min: 30, stat: 'agility'   },
+  { name: 'Toe Touches',    type: 'reps', scale: { base: 15, step: 2, cap: 50 }, step: 2,  min: 8,  stat: 'agility'   },
+  { name: 'Hip Flexor Hold',type: 'time', scale: { base: 20, step: 3, cap: 90 }, step: 5,  min: 15, stat: 'agility'   },
 ];
 
 const CHALLENGES: Challenge[] = [
@@ -61,6 +64,15 @@ const CHALLENGES: Challenge[] = [
       { name: 'Burpees',       type: 'reps', scale: { base: 8,  step: 1, cap: 30 }, stat: 'power'     },
       { name: 'Mt. Climbers',  type: 'time', scale: { base: 20, step: 3, cap: 75 }, stat: 'endurance' },
       { name: 'Jumping Jacks', type: 'time', scale: { base: 25, step: 3, cap: 75 }, stat: 'endurance' },
+    ],
+  },
+  {
+    name: 'Flexibility Flow',
+    stat: 'agility',
+    exercises: [
+      { name: 'Stretch',         type: 'time', cfgIdx: 4,                                stat: 'agility' },
+      { name: 'Hip Flexor Hold', type: 'time', scale: { base: 20, step: 3, cap: 90 },    stat: 'agility' },
+      { name: 'Toe Touches',     type: 'reps', scale: { base: 15, step: 2, cap: 50 },    stat: 'agility' },
     ],
   },
 ];
@@ -146,7 +158,7 @@ function showExerciseList(): void {
   const m = main();
   m.innerHTML = '';
 
-  m.appendChild(make('h2', 'picker-heading', 'Choose Your Trial'));
+  m.appendChild(make('h2', 'picker-heading', 'Choose Your Ordeal'));
 
   const tabBar = make('div', 'tab-bar');
   const soloTab = btn('Solo', 'tab-btn' + (activeTab === 'solo' ? ' active' : ''), () => {
@@ -223,7 +235,7 @@ function showConfigure(ex: Exercise): void {
   m.appendChild(xpEl);
   refreshConfig();
 
-  m.appendChild(btn('Start Trial', 'trial-btn',           startSolo));
+  m.appendChild(btn('Begin Ordeal', 'trial-btn',           startSolo));
   m.appendChild(btn('Back',        'trial-btn secondary', showExerciseList));
 }
 
@@ -248,7 +260,7 @@ function refreshConfig(): void {
   const xpEl     = document.getElementById('xp-preview');
   /* istanbul ignore else */ if (setsEl)   setsEl.textContent   = String(s.sets);
   /* istanbul ignore else */ if (targetEl) targetEl.textContent = s.ex.type === 'reps' ? String(s.target) : fmt(s.target);
-  /* istanbul ignore else */ if (xpEl)     xpEl.textContent     = 'Reward: ' + (XP_BASE_TRIAL + s.sets * XP_PER_SET) + ' XP';
+  /* istanbul ignore else */ if (xpEl)     xpEl.textContent     = 'Reward: ' + (XP_BASE_TRIAL + s.sets * XP_PER_SET) + ' Cosmo';
 }
 
 // ── Screen 2b · Challenge detail ──────────────────────────────────────────
@@ -297,7 +309,7 @@ function refreshChallengeConfig(): void {
   /* istanbul ignore else */ if (roundsEl) roundsEl.textContent = String(s.rounds);
   /* istanbul ignore else */ if (xpEl) {
     const totalExs = s.rounds * s.challenge.exercises.length;
-    xpEl.textContent = 'Reward: ' + (XP_BASE_CHALLENGE + totalExs * XP_PER_CHALLENGE_EX) + ' XP';
+    xpEl.textContent = 'Reward: ' + (XP_BASE_CHALLENGE + totalExs * XP_PER_CHALLENGE_EX) + ' Cosmo';
   }
 }
 
@@ -553,9 +565,9 @@ function showComplete(): void {
   m.innerHTML =
     '<div class="complete-card">' +
       '<img src="./img/center.svg" alt="" class="complete-icon">' +
-      '<h2 class="sucess">Trial Complete!</h2>' +
+      '<h2 class="sucess">Ordeal Complete!</h2>' +
       '<p class="set-indicator">' + summary + '</p>' +
-      '<p class="reward-line">+' + xpActual + ' XP</p>' +
+      '<p class="reward-line">+' + xpActual + ' Cosmo</p>' +
       '<button id="again-btn" class="trial-btn">Again</button>' +
       '<button id="menu-btn"  class="trial-btn secondary">Menu</button>' +
     '</div>';
@@ -585,7 +597,7 @@ function showChallengeComplete(): void {
       '<h2 class="reward">' + savedChallenge.name + '</h2>' +
       '<p class="sucess complete-sub">Challenge Complete!</p>' +
       '<p class="set-indicator">' + summary + '</p>' +
-      '<p class="reward-line">+' + xpActual + ' XP</p>' +
+      '<p class="reward-line">+' + xpActual + ' Cosmo</p>' +
       '<button id="again-btn" class="trial-btn gold">Again</button>' +
       '<button id="menu-btn"  class="trial-btn secondary">Menu</button>' +
     '</div>';

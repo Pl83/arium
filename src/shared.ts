@@ -13,12 +13,12 @@ function xpForNextLevel(level: number): number {
 }
 
 const RANKS: RankEntry[] = [
-  { minLevel:  1, rank: 'E', title: 'Novice'     },
-  { minLevel:  5, rank: 'D', title: 'Apprentice'  },
-  { minLevel: 10, rank: 'C', title: 'Warrior'     },
-  { minLevel: 20, rank: 'B', title: 'Champion'    },
-  { minLevel: 35, rank: 'A', title: 'Hero'        },
-  { minLevel: 50, rank: 'S', title: 'Legend'      },
+  { minLevel:  1, rank: 'E', title: 'Aspirant'     },
+  { minLevel:  5, rank: 'D', title: 'Bronze Saint' },
+  { minLevel: 10, rank: 'C', title: 'Silver Saint' },
+  { minLevel: 20, rank: 'B', title: 'Gold Saint'   },
+  { minLevel: 35, rank: 'A', title: 'Divine Saint' },
+  { minLevel: 50, rank: 'S', title: 'God Saint'    },
 ];
 
 // Goal scaling: target = min(cap, base + (level - 1) * step)
@@ -27,6 +27,7 @@ const GOAL_CONFIG: GoalConfig[] = [
   { name: 'Sit-Ups',  base: 20, step: 2, cap: 100 },
   { name: 'Squats',   base: 20, step: 2, cap: 100 },
   { name: 'Plank',    base: 30, step: 5,  cap: 300 },
+  { name: 'Stretch',  base: 60, step: 5,  cap: 180 },
 ];
 
 function goalTarget(cfg: { base: number; step: number; cap: number }, level: number): number {
@@ -37,8 +38,8 @@ function goalTitle(cfg: GoalConfig, level: number): string {
   return cfg.name + ' [0/' + goalTarget(cfg, level) + ']';
 }
 
-const STAT_KEYS: StatKey[] = ['strength', 'core', 'power', 'endurance'];
-const STAT_LABELS: Record<StatKey, string> = { strength: 'Strength', core: 'Core', power: 'Power', endurance: 'Endurance' };
+const STAT_KEYS: StatKey[] = ['strength', 'core', 'power', 'endurance', 'agility'];
+const STAT_LABELS: Record<StatKey, string> = { strength: 'Strength', core: 'Core', power: 'Power', endurance: 'Endurance', agility: 'Agility' };
 const STAT_SOFT_CAP = 50;
 
 function getTotalXP(): number {
@@ -63,7 +64,7 @@ function getRank(level: number): RankEntry {
 }
 
 function getPlayerName(): string {
-  return localStorage.getItem('playerName') || 'Hunter';
+  return localStorage.getItem('playerName') || 'Saint';
 }
 
 function getStats(): Partial<StatMap> {
@@ -76,7 +77,8 @@ function statForTitle(title: string): StatKey | null {
   if (t.includes('push'))  return 'strength';
   if (t.includes('sit'))   return 'core';
   if (t.includes('squat')) return 'power';
-  if (t.includes('plank')) return 'endurance';
+  if (t.includes('plank'))   return 'endurance';
+  if (t.includes('stretch')) return 'agility';
   return null;
 }
 
@@ -84,7 +86,7 @@ function getDeviceId(): string {
   let id = localStorage.getItem('deviceId');
   if (!id) {
     id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-      const r = Math.random() * 16 | 0;
+      const r = crypto.getRandomValues(new Uint8Array(1))[0] % 16;
       return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
     });
     localStorage.setItem('deviceId', id);

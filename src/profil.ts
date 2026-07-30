@@ -1,15 +1,29 @@
 // shared.js must be loaded before this file
 
 // ─── Radar Chart ─────────────────────────────────────────────────────────────
-// Renders a 4-axis spider/radar chart into #radar-chart SVG for the
-// Crystalline Arcane design. Called from render() after stats are loaded.
+// Renders a 5-axis spider/radar chart into #radar-chart SVG for the Sanctuary
+// design. Called from render() after stats are loaded.
+//
+// Colours are read from theme.css at render time so the chart follows whichever
+// palette is active. The fallbacks are the Sanctuary Dark values, used when no
+// stylesheet is attached (jsdom under test).
 
-const RADAR_ATTR_COLORS: Record<string, string> = {
-  strength:  '#FF8FB5',
-  core:      '#9B8CFF',
-  power:     '#FFCB6B',
-  endurance: '#69F0CE',
+function themeColor(name: string, fallback: string): string {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return value || fallback;
+}
+
+const RADAR_ATTR_FALLBACKS: Record<string, string> = {
+  strength:  '#FF9B7A',
+  core:      '#A28BF7',
+  power:     '#E8C160',
+  endurance: '#7FE0B8',
+  agility:   '#B79CFF',
 };
+
+function radarAttrColor(key: string): string {
+  return themeColor('--attr-' + key, RADAR_ATTR_FALLBACKS[key] ?? '#E8C160');
+}
 
 function renderRadarChart(attrs: Partial<StatMap>): void {
   const svg = document.getElementById('radar-chart') as SVGSVGElement | null;
@@ -25,10 +39,11 @@ function renderRadarChart(attrs: Partial<StatMap>): void {
     { key: 'core',      name: 'COR' },
     { key: 'power',     name: 'POW' },
     { key: 'endurance', name: 'END' },
+    { key: 'agility',   name: 'AGI' },
   ];
 
-  // 4-axis layout: top, right, bottom, left
-  const angles = [-Math.PI / 2, 0, Math.PI / 2, Math.PI];
+  // N-axis layout: regular polygon starting at top (−π/2), evenly spaced
+  const angles = labels.map((_, i) => -Math.PI / 2 + (2 * Math.PI / labels.length) * i);
   const pt = (i: number, mag: number): [number, number] => [
     cx + Math.cos(angles[i]) * r * mag,
     cy + Math.sin(angles[i]) * r * mag,
@@ -47,12 +62,17 @@ function renderRadarChart(attrs: Partial<StatMap>): void {
 
   svg.innerHTML = '';
 
+  const gold     = themeColor('--gold', '#E8C160');
+  const gridLine = themeColor('--fg-dim', 'rgba(230,220,255,0.35)');
+  const labelCol = themeColor('--fg-muted', 'rgba(230,220,255,0.6)');
+  const groundCol = themeColor('--bg', '#0A0716');
+
   // ── Grid rings ──
   [0.33, 0.66, 1].forEach(mag => {
     const pts = labels.map((_, i) => pt(i, mag).join(',')).join(' ');
     svg.appendChild(el('polygon', {
       points: pts, fill: 'none',
-      stroke: 'rgba(220,210,255,0.22)', 'stroke-width': '0.6',
+      stroke: gridLine, 'stroke-width': '0.6',
     }));
   });
 
@@ -61,7 +81,7 @@ function renderRadarChart(attrs: Partial<StatMap>): void {
     const [x, y] = pt(i, 1);
     svg.appendChild(el('line', {
       x1: cx, y1: cy, x2: x, y2: y,
-      stroke: 'rgba(220,210,255,0.22)', 'stroke-width': '0.6',
+      stroke: gridLine, 'stroke-width': '0.6',
     }));
   });
 
@@ -72,11 +92,11 @@ function renderRadarChart(attrs: Partial<StatMap>): void {
   const dataD = 'M' + dataPts.map(p => p.join(',')).join(' L') + ' Z';
   svg.appendChild(el('path', {
     d: dataD,
-    fill: 'rgba(155,140,255,0.18)',
-    stroke: '#9B8CFF',
+    fill: themeColor('--gold-faint', 'rgba(232,193,96,0.08)'),
+    stroke: gold,
     'stroke-width': '1.5',
     'stroke-linejoin': 'miter',
-    filter: 'drop-shadow(0 0 8px #9B8CFF)',
+    filter: 'drop-shadow(0 0 8px ' + gold + ')',
   }));
 
   // ── Dots ──
@@ -84,8 +104,8 @@ function renderRadarChart(attrs: Partial<StatMap>): void {
     const [x, y] = pt(i, Math.min((attrs[l.key] || 0) / SOFT_MAX, 1));
     svg.appendChild(el('circle', {
       cx: x, cy: y, r: 3,
-      fill: RADAR_ATTR_COLORS[l.key] ?? '#9B8CFF',
-      stroke: '#08051A', 'stroke-width': '1',
+      fill: radarAttrColor(l.key),
+      stroke: groundCol, 'stroke-width': '1',
     }));
   });
 
@@ -96,7 +116,7 @@ function renderRadarChart(attrs: Partial<StatMap>): void {
 
     const abbr = el('text', {
       x, y: y + 4, 'font-size': '9',
-      fill: 'rgba(220,210,255,0.6)',
+      fill: labelCol,
       'text-anchor': 'middle',
       'letter-spacing': '0.15em',
       'font-family': "'Cinzel', serif",
@@ -106,7 +126,7 @@ function renderRadarChart(attrs: Partial<StatMap>): void {
     const val = el('text', {
       x, y: y + 17, 'font-size': '13',
       'font-weight': '700',
-      fill: RADAR_ATTR_COLORS[l.key] ?? '#9B8CFF',
+      fill: radarAttrColor(l.key),
       'text-anchor': 'middle',
       'font-family': "'Cinzel', serif",
     });
@@ -140,13 +160,14 @@ function render(): void {
 
   // Level
   (document.getElementById('profileLevel') as HTMLElement).textContent = String(level);
-  const bar = document.getElementById('profileLevelProgress') as HTMLElement;
-  bar.style.width = progress + '%';
-  bar.textContent = progress + '%';
+  (document.getElementById('profileLevelProgress') as HTMLElement).style.width = progress + '%';
+  // Label overlays the whole bar; a fill at 0% would clip text placed inside it
+  const barLabel = document.getElementById('profileLevelLabel');
+  if (barLabel) barLabel.textContent = progress + '%';
 
   // General stats
   (document.getElementById('streakCount') as HTMLElement).textContent = streak + (streak === 1 ? ' day' : ' days');
-  (document.getElementById('totalXPDisplay') as HTMLElement).textContent = xp + ' xp';
+  (document.getElementById('totalXPDisplay') as HTMLElement).textContent = xp + ' cosmo';
   (document.getElementById('totalCompleted') as HTMLElement).textContent = String(totalCompleted);
 
   // Attribute bars (hidden in new design, kept for JS compatibility)
@@ -190,7 +211,8 @@ document.getElementById('editNameBtn')!.addEventListener('click', () => {
   input.select();
 
   function save(): void {
-    const newName = input.value.trim() || 'Hunter';
+    const raw     = input.value.trim() || 'Saint';
+    const newName = raw.replace(/[^\p{L}\p{N} _.'\\-]/gu, '').slice(0, 20) || 'Saint';
     localStorage.setItem('playerName', newName);
     nameTag.textContent = newName;
     nameTag.style.display = '';
