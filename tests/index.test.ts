@@ -530,3 +530,33 @@ describe('showRankUpModal', () => {
     expect(document.getElementById('info').classList.contains('rank-up')).toBe(false);
   });
 });
+
+// ── pendingWipe — SQLite cleanup after Delete Account ─────────────────────────
+
+describe('pendingWipe', () => {
+  const sqlFor = (mockTx: any) =>
+    mockTx.executeSql.mock.calls.map((c: any[]) => String(c[0]));
+
+  it('empties the objectives table when the flag is present', () => {
+    localStorage.setItem('lastOpened', new Date().toDateString());
+    localStorage.setItem('pendingWipe', '1');
+    const { mockTx } = createSQLiteMock({ rows: [{ count: 2, id: 1, title: 'Push-Ups [0/20]', completed: 0 }] });
+    (global as any).onDeviceReady();
+    expect(sqlFor(mockTx).some(s => /DELETE FROM objectives/i.test(s))).toBe(true);
+  });
+
+  it('clears the flag so the wipe happens exactly once', () => {
+    localStorage.setItem('lastOpened', new Date().toDateString());
+    localStorage.setItem('pendingWipe', '1');
+    createSQLiteMock({ rows: [{ count: 2, id: 1, title: 'Push-Ups [0/20]', completed: 0 }] });
+    (global as any).onDeviceReady();
+    expect(localStorage.getItem('pendingWipe')).toBeNull();
+  });
+
+  it('leaves the table alone on a normal launch', () => {
+    localStorage.setItem('lastOpened', new Date().toDateString());
+    const { mockTx } = createSQLiteMock({ rows: [{ count: 2, id: 1, title: 'Push-Ups [0/20]', completed: 0 }] });
+    (global as any).onDeviceReady();
+    expect(sqlFor(mockTx).some(s => /DELETE FROM objectives/i.test(s))).toBe(false);
+  });
+});

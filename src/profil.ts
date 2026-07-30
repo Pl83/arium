@@ -255,8 +255,57 @@ function initThemeControl(): void {
   markActive();
 }
 
+// --- Danger zone › Delete Account ---
+
+// Nothing local is destroyed until the server confirms the leaderboard row is
+// gone — or tells us there never was one. See deletePlayer() in supabase.ts for
+// why 'absent' counts as success and an empty DELETE response does not.
+function initDeleteAccount(): void {
+  const trigger    = document.getElementById('deleteAccountBtn') as HTMLButtonElement | null;
+  const confirmBox = document.getElementById('deleteConfirm');
+  const cancelBtn  = document.getElementById('deleteCancelBtn') as HTMLButtonElement | null;
+  const eraseBtn   = document.getElementById('deleteConfirmBtn') as HTMLButtonElement | null;
+  const status     = document.getElementById('deleteStatus');
+  if (!trigger || !confirmBox || !cancelBtn || !eraseBtn || !status) return;
+
+  // Step one only reveals the confirmation; it touches nothing.
+  trigger.addEventListener('click', () => {
+    trigger.hidden = true;
+    confirmBox.hidden = false;
+    status.textContent = '';
+  });
+
+  cancelBtn.addEventListener('click', () => {
+    confirmBox.hidden = true;
+    trigger.hidden = false;
+    status.textContent = '';
+  });
+
+  eraseBtn.addEventListener('click', async () => {
+    eraseBtn.disabled = true;
+    cancelBtn.disabled = true;
+    status.textContent = 'Contacting the Sanctuary…';
+
+    const outcome = await deletePlayer(getDeviceId());
+
+    if (outcome === 'failed') {
+      eraseBtn.disabled = false;
+      cancelBtn.disabled = false;
+      status.textContent = 'Could not reach the Sanctuary. Nothing was deleted.';
+      return;
+    }
+
+    localStorage.clear();
+    // profile.html carries no database handle, so the SQLite side cannot be
+    // cleared here. index.ts drops the objectives table when it sees this flag.
+    localStorage.setItem('pendingWipe', '1');
+    window.location.href = 'index.html';
+  });
+}
+
 render();
 initThemeControl();
+initDeleteAccount();
 
 // === NODE/JEST EXPORT — invisible in browser ===
 /* istanbul ignore else */
@@ -264,5 +313,6 @@ if (typeof module !== 'undefined') {
   global.render = render;
   global.renderRadarChart = renderRadarChart;
   global.initThemeControl  = initThemeControl;
-  module.exports = { render, renderRadarChart, initThemeControl };
+  global.initDeleteAccount = initDeleteAccount;
+  module.exports = { render, renderRadarChart, initThemeControl, initDeleteAccount };
 }

@@ -399,3 +399,90 @@ main.app {
   text-transform: uppercase;
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   DANGER ZONE — Delete Account
+
+   The only place in the app that speaks in --danger rather than --gold.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.danger-zone { border-color: var(--danger); }
+.danger-zone::before { background-color: var(--danger); }
+
+.section-head .danger-bar {
+  background: var(--danger);
+  box-shadow: 0 0 8px var(--danger);
+}
+
+.section-head .danger-title {
+  color: var(--danger);
+  text-shadow: 0 0 8px var(--danger);
+}
+
+.danger-copy {
+  font-size: 10px;
+  line-height: 1.7;
+  color: var(--fg-muted);
+  letter-spacing: 0.06em;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.danger-strong {
+  color: var(--danger);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.danger-btn {
+  display: block;
+  width: 100%;
+  padding: 13px 0;
+  min-height: 44px;
+  background: transparent;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+
+.danger-btn:active { background: rgba(255,107,122,0.12); box-shadow: 0 0 14px var(--danger); }
+
+.danger-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
+
+.danger-confirm { margin-top: 14px; }
+
+.danger-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.danger-btn.ghost {
+  border-color: var(--gold-soft);
+  color: var(--fg-muted);
+}
+
+.danger-btn.ghost:active { background: var(--gold-faint); box-shadow: none; }
+
+.danger-btn.solid {
+  background: var(--danger);
+  color: var(--bg);
+}
+
+.danger-status:empty { display: none; }
+
+.danger-status {
+  margin-top: 12px;
+  font-size: 9px;
+  line-height: 1.6;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--danger);
+}

@@ -269,6 +269,11 @@
   box-sizing: border-box;
 }
 
+/* Any explicit `display` in a component rule outranks the UA stylesheet's
+   [hidden] { display: none }, which silently leaves hidden elements on screen.
+   Restore the attribute's authority. */
+[hidden] { display: none !important; }
+
 /* ═══════════════════════════════════════════════════════════════════
    BASE
    ═══════════════════════════════════════════════════════════════════ */

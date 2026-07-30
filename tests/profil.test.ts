@@ -25,6 +25,12 @@ const PROFIL_DOM = `
     <button class="seg-btn" data-theme-choice="light">Light</button>
   </div>
   <svg id="radar-chart"></svg>
+  <button id="deleteAccountBtn"></button>
+  <div id="deleteConfirm" hidden>
+    <button id="deleteCancelBtn"></button>
+    <button id="deleteConfirmBtn"></button>
+  </div>
+  <p id="deleteStatus"></p>
 `;
 
 let profilModule: any;
@@ -260,3 +266,106 @@ describe('initThemeControl', () => {
   });
 });
 
+// ── Danger zone › Delete Account ──────────────────────────────────────────────
+
+describe('initDeleteAccount', () => {
+  const trigger    = () => document.getElementById('deleteAccountBtn') as HTMLButtonElement;
+  const confirmBox = () => document.getElementById('deleteConfirm') as HTMLElement;
+  const cancelBtn  = () => document.getElementById('deleteCancelBtn') as HTMLButtonElement;
+  const eraseBtn   = () => document.getElementById('deleteConfirmBtn') as HTMLButtonElement;
+  const status     = () => document.getElementById('deleteStatus') as HTMLElement;
+
+  // Rebuild the page with deletePlayer stubbed to a chosen outcome.
+  const load = (outcome: string) => {
+    (global as any).deletePlayer = jest.fn().mockResolvedValue(outcome);
+    document.body.innerHTML = PROFIL_DOM;
+    jest.resetModules();
+    require('../src/theme');
+    require('../src/shared');
+    require('../src/profil');
+  };
+
+  const seedProgress = () => {
+    localStorage.setItem('playerName', 'Axel');
+    localStorage.setItem('totalXP', '7100');
+    localStorage.setItem('deviceId', 'dev-1');
+  };
+
+  it('keeps the confirmation hidden until the first tap', () => {
+    load('deleted');
+    expect(confirmBox().hidden).toBe(true);
+  });
+
+  it('reveals the confirmation without destroying anything', async () => {
+    seedProgress();
+    load('deleted');
+    trigger().click();
+    expect(confirmBox().hidden).toBe(false);
+    expect(trigger().hidden).toBe(true);
+    expect((global as any).deletePlayer).not.toHaveBeenCalled();
+    expect(localStorage.getItem('totalXP')).toBe('7100');
+  });
+
+  it('backs out cleanly on Keep', () => {
+    seedProgress();
+    load('deleted');
+    trigger().click();
+    cancelBtn().click();
+    expect(confirmBox().hidden).toBe(true);
+    expect(trigger().hidden).toBe(false);
+    expect(localStorage.getItem('totalXP')).toBe('7100');
+  });
+
+  it('erases local data and flags the SQLite wipe when the row is deleted', async () => {
+    seedProgress();
+    load('deleted');
+    trigger().click();
+    eraseBtn().click();
+    await Promise.resolve(); await Promise.resolve();
+
+    expect((global as any).deletePlayer).toHaveBeenCalledWith('dev-1');
+    expect(localStorage.getItem('totalXP')).toBeNull();
+    expect(localStorage.getItem('playerName')).toBeNull();
+    expect(localStorage.getItem('pendingWipe')).toBe('1');
+  });
+
+  it('erases local data when no remote row existed (never-synced player)', async () => {
+    seedProgress();
+    load('absent');
+    trigger().click();
+    eraseBtn().click();
+    await Promise.resolve(); await Promise.resolve();
+
+    expect(localStorage.getItem('totalXP')).toBeNull();
+    expect(localStorage.getItem('pendingWipe')).toBe('1');
+  });
+
+  it('destroys NOTHING when the remote delete fails', async () => {
+    seedProgress();
+    load('failed');
+    trigger().click();
+    eraseBtn().click();
+    await Promise.resolve(); await Promise.resolve();
+
+    expect(localStorage.getItem('totalXP')).toBe('7100');
+    expect(localStorage.getItem('playerName')).toBe('Axel');
+    expect(localStorage.getItem('pendingWipe')).toBeNull();
+    expect(status().textContent).toContain('Nothing was deleted');
+  });
+
+  it('re-enables the buttons after a failure so the user can retry', async () => {
+    seedProgress();
+    load('failed');
+    trigger().click();
+    eraseBtn().click();
+    await Promise.resolve(); await Promise.resolve();
+
+    expect(eraseBtn().disabled).toBe(false);
+    expect(cancelBtn().disabled).toBe(false);
+  });
+
+  it('does not throw when the danger zone is absent from the page', () => {
+    document.body.innerHTML = '<div></div>';
+    expect(() => (global as any).initDeleteAccount()).not.toThrow();
+  });
+});

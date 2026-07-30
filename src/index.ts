@@ -16,6 +16,13 @@ function onDeviceReady(): void {
       title TEXT,
       completed INTEGER
     )`);
+    // Delete Account runs on profile.html, which has no database handle of its
+    // own. It clears localStorage and leaves this flag so the objectives table
+    // is emptied here, before anything reseeds it.
+    if (localStorage.getItem('pendingWipe')) {
+      tx.executeSql('DELETE FROM objectives');
+      localStorage.removeItem('pendingWipe');
+    }
   }, err => {
     console.error('DB Error', err);
   }, () => {

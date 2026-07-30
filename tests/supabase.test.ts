@@ -150,3 +150,79 @@ describe('fetchLeaderboard', () => {
     expect(options.headers['apikey']).toBe(supabaseModule.SUPABASE_ANON_KEY);
   });
 });
+
+// ── deletePlayer ──────────────────────────────────────────────────────────────
+
+describe('deletePlayer', () => {
+  // First call = existence lookup (GET), second = the DELETE.
+  const mockCalls = (lookup: any, remove?: any) => {
+    const f = jest.fn()
+      .mockResolvedValueOnce(lookup)
+      .mockResolvedValueOnce(remove ?? { ok: true, json: async () => [] });
+    global.fetch = f;
+    return f;
+  };
+  const row = { device_id: 'dev-1' };
+
+  it('returns "deleted" when the server confirms a row was removed', async () => {
+    mockCalls(
+      { ok: true, json: async () => [row] },
+      { ok: true, json: async () => [row] },
+    );
+    await expect(supabaseModule.deletePlayer('dev-1')).resolves.toBe('deleted');
+  });
+
+  it('returns "absent" when no row exists, so a never-synced player can still erase', async () => {
+    const f = mockCalls({ ok: true, json: async () => [] });
+    await expect(supabaseModule.deletePlayer('dev-1')).resolves.toBe('absent');
+    expect(f).toHaveBeenCalledTimes(1); // no DELETE attempted
+  });
+
+  it('returns "failed" when the row exists but DELETE removes nothing (RLS refused)', async () => {
+    mockCalls(
+      { ok: true, json: async () => [row] },
+      { ok: true, json: async () => [] },
+    );
+    await expect(supabaseModule.deletePlayer('dev-1')).resolves.toBe('failed');
+  });
+
+  it('returns "failed" when the DELETE responds with an error status', async () => {
+    mockCalls(
+      { ok: true, json: async () => [row] },
+      { ok: false, status: 403, json: async () => [] },
+    );
+    await expect(supabaseModule.deletePlayer('dev-1')).resolves.toBe('failed');
+  });
+
+  it('returns "failed" when the existence lookup errors', async () => {
+    mockCalls({ ok: false, status: 500, json: async () => [] });
+    await expect(supabaseModule.deletePlayer('dev-1')).resolves.toBe('failed');
+  });
+
+  it('returns "failed" when the network throws', async () => {
+    global.fetch = jest.fn().mockRejectedValue(new Error('offline'));
+    await expect(supabaseModule.deletePlayer('dev-1')).resolves.toBe('failed');
+  });
+
+  it('sends DELETE with the device filter, representation preference and device header', async () => {
+    const f = mockCalls(
+      { ok: true, json: async () => [row] },
+      { ok: true, json: async () => [row] },
+    );
+    await supabaseModule.deletePlayer('dev-1');
+    const [url, options] = f.mock.calls[1];
+    expect(options.method).toBe('DELETE');
+    expect(url).toContain('device_id=eq.dev-1');
+    expect(options.headers['Prefer']).toBe('return=representation');
+    expect(options.headers['x-device-id']).toBe('dev-1');
+  });
+
+  it('url-encodes the device id', async () => {
+    const f = mockCalls(
+      { ok: true, json: async () => [row] },
+      { ok: true, json: async () => [row] },
+    );
+    await supabaseModule.deletePlayer('a b/c');
+    expect(f.mock.calls[1][0]).toContain('device_id=eq.a%20b%2Fc');
+  });
+});
