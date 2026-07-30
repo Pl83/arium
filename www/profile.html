@@ -12,6 +12,8 @@
         <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="css/theme.css">
         <link rel="stylesheet" href="css/profile.css">
+        <!-- Applies the stored theme before first paint; must stay in <head> -->
+        <script src="js/theme.js"></script>
         <title>ARIUM — Profile</title>
     </head>
     <body>
@@ -121,6 +123,25 @@
                     <span class="stat-label">Completed</span>
                     <span id="totalCompleted" class="stat-value">0</span>
                 </div>
+            </section>
+
+            <!-- ── Display settings ── -->
+            <section class="stats-card">
+                <div class="section-head">
+                    <div class="accent-bar"></div>
+                    <div>
+                        <span class="head-kicker">Display</span>
+                        <span class="head-title">Theme</span>
+                    </div>
+                </div>
+
+                <!-- profil.js sets .active from the stored choice -->
+                <div class="segmented" id="themeControl" role="group" aria-label="Theme">
+                    <button type="button" class="seg-btn" data-theme-choice="auto">Auto</button>
+                    <button type="button" class="seg-btn" data-theme-choice="dark">Dark</button>
+                    <button type="button" class="seg-btn" data-theme-choice="light">Light</button>
+                </div>
+                <p class="seg-hint">Auto follows your device setting.</p>
             </section>
 
         </main>

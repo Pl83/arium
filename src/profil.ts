@@ -225,12 +225,44 @@ document.getElementById('editNameBtn')!.addEventListener('click', () => {
   input.addEventListener('keydown', e => { if (e.key === 'Enter') save(); });
 });
 
+// --- Display › Theme ---
+
+// theme.ts owns the storage and the <html> attribute; this only drives the
+// control's appearance and repaints what CSS cannot repaint on its own.
+function initThemeControl(): void {
+  const control = document.getElementById('themeControl');
+  if (!control) return;
+
+  const buttons = Array.from(control.querySelectorAll('.seg-btn')) as HTMLElement[];
+
+  function markActive(): void {
+    const current = getTheme();
+    buttons.forEach(b => b.classList.toggle('active', b.dataset.themeChoice === current));
+  }
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const choice = btn.dataset.themeChoice;
+      if (choice !== 'auto' && choice !== 'dark' && choice !== 'light') return;
+      setTheme(choice);
+      markActive();
+      // The radar bakes its colours in at draw time, so it would keep the old
+      // palette until the next navigation unless we redraw it here.
+      renderRadarChart(getStats());
+    });
+  });
+
+  markActive();
+}
+
 render();
+initThemeControl();
 
 // === NODE/JEST EXPORT — invisible in browser ===
 /* istanbul ignore else */
 if (typeof module !== 'undefined') {
   global.render = render;
   global.renderRadarChart = renderRadarChart;
-  module.exports = { render, renderRadarChart };
+  global.initThemeControl  = initThemeControl;
+  module.exports = { render, renderRadarChart, initThemeControl };
 }

@@ -7,4 +7,5 @@
 (global as Record<string, unknown>).SUPABASE_URL      = 'https://test.supabase.co';
 (global as Record<string, unknown>).SUPABASE_ANON_KEY = 'test-anon-key';
 
+require('../src/theme');
 require('../src/shared');

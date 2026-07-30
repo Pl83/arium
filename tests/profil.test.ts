@@ -19,6 +19,11 @@ const PROFIL_DOM = `
   <div id="bar-power" style="width:0%"></div><span id="val-power">0</span>
   <div id="bar-endurance" style="width:0%"></div><span id="val-endurance">0</span>
   <div id="bar-agility" style="width:0%"></div><span id="val-agility">0</span>
+  <div id="themeControl">
+    <button class="seg-btn" data-theme-choice="auto">Auto</button>
+    <button class="seg-btn" data-theme-choice="dark">Dark</button>
+    <button class="seg-btn" data-theme-choice="light">Light</button>
+  </div>
   <svg id="radar-chart"></svg>
 `;
 
@@ -28,7 +33,9 @@ beforeEach(() => {
   localStorage.clear();
   jest.clearAllMocks();
   document.body.innerHTML = PROFIL_DOM;
+  document.documentElement.removeAttribute('data-theme');
   jest.resetModules();
+  require('../src/theme');
   require('../src/shared');
   profilModule = require('../src/profil');
 });
@@ -194,6 +201,62 @@ describe('editNameBtn', () => {
     input.value = 'Phantom';
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
     expect(localStorage.getItem('playerName')).toBeNull();
+  });
+});
+
+// ── Display › Theme control ───────────────────────────────────────────────────
+
+describe('initThemeControl', () => {
+  const buttons = () =>
+    Array.from(document.querySelectorAll('#themeControl .seg-btn')) as HTMLElement[];
+  const active = () =>
+    (document.querySelector('#themeControl .seg-btn.active') as HTMLElement | null)
+      ?.dataset.themeChoice ?? null;
+
+  it('marks Auto active when nothing is stored', () => {
+    expect(active()).toBe('auto');
+  });
+
+  it('marks the stored choice active on load', () => {
+    localStorage.setItem('theme', 'light');
+    document.body.innerHTML = PROFIL_DOM;
+    jest.resetModules();
+    require('../src/theme');
+    require('../src/shared');
+    require('../src/profil');
+    expect(active()).toBe('light');
+  });
+
+  it('persists and applies the choice on click', () => {
+    buttons().find(b => b.dataset.themeChoice === 'dark')!.click();
+    expect(localStorage.getItem('theme')).toBe('dark');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+  });
+
+  it('moves the active marker to the clicked button', () => {
+    buttons().find(b => b.dataset.themeChoice === 'light')!.click();
+    expect(active()).toBe('light');
+    expect(document.querySelectorAll('#themeControl .seg-btn.active').length).toBe(1);
+  });
+
+  it('clears storage and the attribute when Auto is chosen again', () => {
+    buttons().find(b => b.dataset.themeChoice === 'dark')!.click();
+    buttons().find(b => b.dataset.themeChoice === 'auto')!.click();
+    expect(localStorage.getItem('theme')).toBeNull();
+    expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
+    expect(active()).toBe('auto');
+  });
+
+  it('redraws the radar so it picks up the new palette', () => {
+    const svg = document.getElementById('radar-chart')!;
+    svg.innerHTML = '';
+    buttons().find(b => b.dataset.themeChoice === 'dark')!.click();
+    expect(svg.children.length).toBeGreaterThan(0);
+  });
+
+  it('does not throw when the control is absent from the page', () => {
+    document.body.innerHTML = '<div id="themeControlMissing"></div>';
+    expect(() => (global as any).initThemeControl()).not.toThrow();
   });
 });
 
