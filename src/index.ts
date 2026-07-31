@@ -111,6 +111,10 @@ function checkYesterdayCompletion(next: () => void): void {
       const total = (res.rows.item(0) as { total: number }).total;
       tx.executeSql('SELECT COUNT(*) as done FROM objectives WHERE completed = 1', [], (_tx, res2) => {
         const done = (res2.rows.item(0) as { done: number }).done;
+        // recordClosedDays MUST run before applyStreakAndPenalty: it reads the
+        // pre-mutation 'streak' from localStorage, and applyStreakAndPenalty
+        // overwrites that same key. Swapping this order silently changes the
+        // streak value written into day_log.
         recordClosedDays(total, done);
         applyStreakAndPenalty(total, done);
       });

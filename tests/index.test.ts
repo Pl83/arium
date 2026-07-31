@@ -637,6 +637,10 @@ describe('history on daily reset', () => {
     expect(write[1][0]).toBe(yesterday);
     expect(write[1][1]).toBe(5);  // done
     expect(write[1][2]).toBe(5);  // total
+    // Pins call order: recordClosedDays must read 'streak' (set to '4' above)
+    // BEFORE applyStreakAndPenalty overwrites it. If the two calls in
+    // checkYesterdayCompletion were swapped, this would silently become 6.
+    expect(write[1][4]).toBe(5);  // streak (closingStreak = 4 + 1)
   });
 
   it('backfills the days of a multi-day absence', () => {
@@ -700,23 +704,41 @@ describe('history on daily reset', () => {
 });
 
 // ── recordClosedDays guard clauses ────────────────────────────────────────────
-// Direct calls exercise branches handleDailyReset never reaches (it only ever
-// invokes checkYesterdayCompletion — and so recordClosedDays — with a real
-// lastOpenedISO strictly before today).
+// Both guards below are real, reachable defensive paths, not dead code:
+// - !lastKey fires when lastOpened is present but unparseable — the shape of
+//   a WebView localStorage eviction that leaves fitness.db intact.
+//   migrateLastOpenedISO returns null in that case and does NOT set
+//   lastOpenedISO, so recordClosedDays' lastKey stays null.
+// - lastKey >= todayKey fires on a backward clock jump or a timezone move,
+//   where lastOpenedISO is already today or later. Without this guard,
+//   finalizeDay would INSERT OR REPLACE a current-or-future day's row with
+//   the closed day's counts and pin chronicleStart wrongly.
+// Both are driven end-to-end through handleDailyReset, exactly as they would
+// fire in the app, rather than by calling recordClosedDays directly.
 
 describe('recordClosedDays guard clauses', () => {
-  it('writes nothing when lastOpenedISO is missing, even with objectives present', () => {
-    const { mockDb, mockTx } = createSQLiteMock({ rows: [] });
+  it('writes nothing when lastOpened is unparseable, leaving lastOpenedISO unset, even with objectives present', () => {
+    localStorage.setItem('lastOpened', 'not-a-date');
+    const { mockDb, mockTx } = createSQLiteMock({
+      responses: { 'as total': [{ total: 5 }], 'as done': [{ done: 0 }], 'SELECT * FROM day_log': [] },
+    });
     _setDb(mockDb);
-    (global as any).recordClosedDays(5, 3);
-    expect(mockTx.executeSql).not.toHaveBeenCalled();
+    handleDailyReset(() => {});
+    const wrote = mockTx.executeSql.mock.calls
+      .some((c: any[]) => c[0].indexOf('INTO day_log') !== -1);
+    expect(wrote).toBe(false);
   });
 
-  it('writes nothing when lastOpenedISO is already today', () => {
-    localStorage.setItem('lastOpenedISO', localDayKey(new Date()));
-    const { mockDb, mockTx } = createSQLiteMock({ rows: [] });
+  it('writes nothing when lastOpenedISO is already today or later (clock jump / timezone move)', () => {
+    localStorage.setItem('lastOpened', 'old');
+    localStorage.setItem('lastOpenedISO', dayKeyAddDays(localDayKey(new Date()), 2));
+    const { mockDb, mockTx } = createSQLiteMock({
+      responses: { 'as total': [{ total: 5 }], 'as done': [{ done: 0 }], 'SELECT * FROM day_log': [] },
+    });
     _setDb(mockDb);
-    (global as any).recordClosedDays(5, 3);
-    expect(mockTx.executeSql).not.toHaveBeenCalled();
+    handleDailyReset(() => {});
+    const wrote = mockTx.executeSql.mock.calls
+      .some((c: any[]) => c[0].indexOf('INTO day_log') !== -1);
+    expect(wrote).toBe(false);
   });
 });
