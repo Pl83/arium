@@ -1353,6 +1353,12 @@ describe('cellState', () => {
     expect(cellState(row('2026-07-15', 0, 0, 40), '2026-07-15', START, TODAY)).toBe('partial');
   });
 
+  it('is partial when no objective was completed but Cosmo was earned', () => {
+    // Reachable: toggle an objective on then off (total 5, done 0), then run
+    // a Trial. Must agree with monthSummary, which counts this day as trained.
+    expect(cellState(row('2026-07-15', 0, 5, 40), '2026-07-15', START, TODAY)).toBe('partial');
+  });
+
   it('is missed for an empty day with no objective denominator', () => {
     expect(cellState(row('2026-07-15', 0, 0, 0), '2026-07-15', START, TODAY)).toBe('missed');
   });
@@ -1443,6 +1449,14 @@ describe('monthSummary', () => {
     ])).toEqual({ trained: 2, xp: 175 });
   });
 
+  it('agrees with cellState on a Cosmo-only day that has a denominator', () => {
+    // total 5, done 0, xp 40 — cellState calls this partial, so the summary
+    // must call it trained. These two rules diverging is the bug this pins.
+    const rows = [row('2026-07-04', 0, 5, 40)];
+    expect(monthSummary(rows).trained).toBe(1);
+    expect(cellState(rows[0], '2026-07-04', '2026-07-01', '2026-07-31')).toBe('partial');
+  });
+
   it('is zero for an empty month', () => {
     expect(monthSummary([])).toEqual({ trained: 0, xp: 0 });
   });
@@ -1480,13 +1494,13 @@ function cellState(
 ): CellState {
   if (!startKey || dayKey < startKey || dayKey > todayKey) return 'blank';
   if (!r) return 'missed';
-  if (r.total > 0) {
-    if (r.done >= r.total) return 'full';
-    return r.done > 0 ? 'partial' : 'missed';
-  }
-  // No objective denominator: a trial-only day. Training without touching
-  // the daily ordeals is not nothing and must not render as an empty day.
-  return r.xp > 0 ? 'partial' : 'missed';
+  if (r.total > 0 && r.done >= r.total) return 'full';
+  // Cosmo earned is evidence of training whatever the denominator says: a
+  // Trial-only day has total 0, but so does "seed the objectives, complete
+  // none, then run a Trial" with total 5. Neither may render as empty.
+  // monthSummary counts a trained day by this same rule — if the two diverge,
+  // the calendar shows a missed day the summary above it counts as trained.
+  return (r.done > 0 || r.xp > 0) ? 'partial' : 'missed';
 }
 
 // Monday-first. Leading nulls pad the first week; the array ends on the

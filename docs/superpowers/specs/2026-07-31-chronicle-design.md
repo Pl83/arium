@@ -185,19 +185,28 @@ Week starts Monday.
 
 | State | Condition | Treatment |
 |---|---|---|
-| Full | `total > 0 && done === total` | Filled gold |
-| Partial | `0 < done < total` | Hollow gold, gold rim |
-| Missed | `done === 0 && total > 0` | Dim rim, no fill |
+| Full | `total > 0 && done >= total` | Filled gold |
+| Partial | `done > 0 \|\| xp > 0` (and not full) | Hollow gold, gold rim |
+| Missed | `done === 0 && xp === 0` | Dim rim, no fill |
 | Blank | before `chronicleStart`, or future | Date numeral only, muted |
 | Today | today's date | Gold outline **over** its own state |
 
 Today is a modifier, not a sixth state — a completed today reads as full *and* today.
 
-**When `total === 0`** the four objective-based rows above cannot apply. This happens on a
-day the player spent only in Trial mode: `trial.ts` creates the row with `xpDelta` alone
-and never sets a denominator. Such a day is **partial** when `xp > 0` and **missed** when
-`xp === 0`. Training without touching the daily ordeals is not nothing, and must not
-render as an empty day.
+**Cosmo earned is evidence of training, whatever the denominator says.** A day the player
+spent only in Trial mode has `total === 0` — `trial.ts` creates the row with `xpDelta`
+alone and never sets a denominator. But the same situation arises with `total > 0`: seed
+the objectives, complete none, then run a Trial. Both are training without touching the
+daily ordeals, and neither may render as an empty day.
+
+So `partial` keys off `done > 0 || xp > 0`, not off `done` alone. This matters beyond
+cosmetics: `monthSummary`'s "days trained" count uses the same rule, and if the two
+diverge the calendar shows a missed day while the summary above it counts that day as
+trained. One rule, both places.
+
+Note this affects **rendering only**. `isFullDay` — and therefore streaks — still requires
+`total > 0 && done >= total`, so a Trial-only day never extends a streak, and no Cosmo or
+penalty behaviour changes.
 
 ### Month navigation
 
