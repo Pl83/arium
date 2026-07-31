@@ -9,6 +9,7 @@ const {
   xpToLevel, xpForNextLevel,
   statForTitle, getTotalXP, getPlayerName, getStats, incrementStat,
   getDeviceId,
+  localDayKey, parseDayKey, dayKeyAddDays,
   GOAL_CONFIG,
 } = require('../src/shared');
 
@@ -221,5 +222,54 @@ describe('incrementStat', () => {
     localStorage.setItem('stats', JSON.stringify({ strength: 2, core: 1 }));
     incrementStat('strength');
     expect(getStats()).toEqual({ strength: 3, core: 1 });
+  });
+});
+
+// ── localDayKey ───────────────────────────────────────────────────────────────
+
+describe('localDayKey', () => {
+  it('formats a date as YYYY-MM-DD with zero padding', () => {
+    expect(localDayKey(new Date(2026, 0, 5))).toBe('2026-01-05');
+  });
+
+  it('uses local time, not UTC', () => {
+    // 23:30 local on the 31st must stay the 31st, whatever the offset
+    expect(localDayKey(new Date(2026, 6, 31, 23, 30))).toBe('2026-07-31');
+  });
+});
+
+describe('parseDayKey', () => {
+  it('returns local midnight for the key', () => {
+    const d = parseDayKey('2026-07-31');
+    expect(d.getFullYear()).toBe(2026);
+    expect(d.getMonth()).toBe(6);
+    expect(d.getDate()).toBe(31);
+    expect(d.getHours()).toBe(0);
+  });
+
+  it('round-trips with localDayKey', () => {
+    expect(localDayKey(parseDayKey('2024-02-29'))).toBe('2024-02-29');
+  });
+});
+
+describe('dayKeyAddDays', () => {
+  it('advances one day', () => {
+    expect(dayKeyAddDays('2026-07-30', 1)).toBe('2026-07-31');
+  });
+
+  it('crosses a month boundary', () => {
+    expect(dayKeyAddDays('2026-07-31', 1)).toBe('2026-08-01');
+  });
+
+  it('crosses a year boundary', () => {
+    expect(dayKeyAddDays('2026-12-31', 1)).toBe('2027-01-01');
+  });
+
+  it('handles a leap day', () => {
+    expect(dayKeyAddDays('2028-02-28', 1)).toBe('2028-02-29');
+  });
+
+  it('goes backwards with a negative offset', () => {
+    expect(dayKeyAddDays('2026-08-01', -1)).toBe('2026-07-31');
   });
 });

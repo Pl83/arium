@@ -101,6 +101,29 @@ function incrementStat(statName: StatKey | null): void {
   localStorage.setItem('stats', JSON.stringify(stats));
 }
 
+// ── Date keys ──────────────────────────────────────────────────────────────
+// 'YYYY-MM-DD' in LOCAL time. Never toISOString() — that shifts to UTC and
+// files a 23:30 session under tomorrow for anyone east of Greenwich.
+
+function localDayKey(d: Date): string {
+  const m = ('0' + (d.getMonth() + 1)).slice(-2);
+  const day = ('0' + d.getDate()).slice(-2);
+  return d.getFullYear() + '-' + m + '-' + day;
+}
+
+// new Date('2026-07-31') parses as UTC midnight; the explicit constructor
+// gives local midnight, which is what every comparison here assumes.
+function parseDayKey(key: string): Date {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function dayKeyAddDays(key: string, n: number): string {
+  const d = parseDayKey(key);
+  d.setDate(d.getDate() + n);
+  return localDayKey(d);
+}
+
 // === NODE/JEST EXPORT — invisible in browser (module is undefined there) ===
 /* istanbul ignore else */
 if (typeof module !== 'undefined') {
@@ -123,9 +146,13 @@ if (typeof module !== 'undefined') {
   global.statForTitle     = statForTitle;
   global.incrementStat    = incrementStat;
   global.getDeviceId      = getDeviceId;
+  global.localDayKey      = localDayKey;
+  global.parseDayKey      = parseDayKey;
+  global.dayKeyAddDays    = dayKeyAddDays;
   module.exports = {
     XP_BASE_PER_LEVEL, RANKS, GOAL_CONFIG, STAT_KEYS, STAT_LABELS, STAT_SOFT_CAP,
     xpToLevel, xpForNextLevel, goalTarget, goalTitle, getTotalXP, getLevel, getLevelProgress,
     getRank, getPlayerName, getStats, statForTitle, incrementStat, getDeviceId,
+    localDayKey, parseDayKey, dayKeyAddDays,
   };
 }
