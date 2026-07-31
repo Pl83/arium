@@ -742,3 +742,67 @@ describe('recordClosedDays guard clauses', () => {
     expect(wrote).toBe(false);
   });
 });
+
+// ── today's row on objective toggle ───────────────────────────────────────────
+
+describe('today\'s row on objective toggle', () => {
+  function toggleFirstObjective(responses: any) {
+    localStorage.setItem('lastOpened', new Date().toDateString());
+    const { mockDb, mockTx } = createSQLiteMock({ responses });
+    _setDb(mockDb);
+    init();
+    (document.querySelector('.center ul li') as HTMLElement).click();
+    return mockTx;
+  }
+
+  it('adds the objective\'s Cosmo to today\'s row', () => {
+    const mockTx = toggleFirstObjective({
+      'SELECT * FROM objectives': [{ id: 1, title: 'Push-Ups [0/20]', completed: 0 }],
+      'SELECT * FROM day_log': [],
+    });
+    const todayKey = localDayKey(new Date());
+    const write = mockTx.executeSql.mock.calls
+      .find((c: any[]) => c[0].indexOf('INSERT OR REPLACE INTO day_log') !== -1);
+    expect(write[1][0]).toBe(todayKey);
+    expect(write[1][3]).toBe(25); // xp
+  });
+
+  it('subtracts on un-toggle and floors at zero', () => {
+    const mockTx = toggleFirstObjective({
+      'SELECT * FROM objectives': [{ id: 1, title: 'Push-Ups [0/20]', completed: 1 }],
+      'SELECT * FROM day_log': [{ day: localDayKey(new Date()), done: 1, total: 5, xp: 10, streak: 0 }],
+    });
+    const write = mockTx.executeSql.mock.calls
+      .find((c: any[]) => c[0].indexOf('INSERT OR REPLACE INTO day_log') !== -1);
+    expect(write[1][3]).toBe(0);
+  });
+
+  it('records the day\'s done and total counts', () => {
+    const mockTx = toggleFirstObjective({
+      'SELECT * FROM objectives': [{ id: 1, title: 'Push-Ups [0/20]', completed: 0 }],
+      'SELECT * FROM day_log': [],
+    });
+    const write = mockTx.executeSql.mock.calls
+      .find((c: any[]) => c[0].indexOf('INSERT OR REPLACE INTO day_log') !== -1);
+    expect(write[1][1]).toBe(1); // done
+    expect(write[1][2]).toBe(1); // total — one objective in this fixture
+  });
+
+  // completedCount is the PRE-click count. Among 3 objectives with 2 already
+  // complete, un-toggling one of the completed ones must bring done from 2
+  // down to 1 — not up to 3. A sign flip in the +1/-1 branch would pass the
+  // single-objective tests above (they only ever move 0<->1) but fails here.
+  it('decrements done — not increments — on an un-toggle among multiple objectives', () => {
+    const mockTx = toggleFirstObjective({
+      'SELECT * FROM objectives': [
+        { id: 1, title: 'Push-Ups [0/20]', completed: 1 },
+        { id: 2, title: 'Sit-Ups [0/20]', completed: 1 },
+        { id: 3, title: 'Squats [0/20]', completed: 0 },
+      ],
+      'SELECT * FROM day_log': [{ day: localDayKey(new Date()), done: 2, total: 3, xp: 50, streak: 0 }],
+    });
+    const write = mockTx.executeSql.mock.calls
+      .find((c: any[]) => c[0].indexOf('INSERT OR REPLACE INTO day_log') !== -1);
+    expect(write[1][1]).toBe(1); // done: completedCount(2) - 1, must not be 3
+  });
+});

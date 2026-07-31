@@ -338,6 +338,10 @@ function init(): void {
           }, err => {
             console.error('Update error', err);
           }, () => {
+            // completedCount reflects the list as rendered, before this click
+            const dayDone = completedCount + (newCompleted === 1 ? 1 : -1);
+            bumpToday(db, { xpDelta: xpDelta, done: dayDone, total: total });
+
             const oldXP = getTotalXP();
             const newXP = Math.max(0, oldXP + xpDelta);
             localStorage.setItem('totalXP', String(newXP));
