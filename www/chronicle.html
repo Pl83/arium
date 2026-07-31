@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: https://ssl.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; media-src 'none'; img-src 'self' data: content:; connect-src https://*.supabase.co;">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: https://ssl.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; media-src 'none'; img-src 'self' data: content:;">
         <meta name="format-detection" content="telephone=no">
         <meta name="msapplication-tap-highlight" content="no">
         <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover">
@@ -11,20 +11,28 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="css/theme.css">
-        <link rel="stylesheet" href="css/rankings.css">
+        <link rel="stylesheet" href="css/chronicle.css">
         <!-- Applies the stored theme before first paint; must stay in <head> -->
         <script src="js/theme.js"></script>
-        <title>ARIUM — Rankings</title>
+        <title>ARIUM — Chronicle</title>
     </head>
     <body>
-        <main>
-            <header class="rankings-heading">
-                <span class="rankings-kicker">Global Standings</span>
-                <h1 class="rankings-title">Rankings</h1>
-            </header>
-            <div class="app">
-                <!-- populated by rankings.js -->
-            </div>
+        <main class="app">
+            <section class="chronicle-card">
+                <p id="streakLine"></p>
+                <p id="monthLine"></p>
+                <div class="month-head">
+                    <button id="prevMonth" class="month-nav" aria-label="Previous month" disabled>◀</button>
+                    <h2 id="monthLabel"></h2>
+                    <button id="nextMonth" class="month-nav" aria-label="Next month" disabled>▶</button>
+                </div>
+                <div id="weekdayRow" class="weekday-row"></div>
+                <div id="monthGrid" class="month-grid"></div>
+                <div id="dayDetail" class="day-detail" hidden>
+                    <h3 id="detailDate"></h3>
+                    <p id="detailBody"></p>
+                </div>
+            </section>
         </main>
 
         <!-- ── Footer nav ── -->
@@ -42,13 +50,13 @@
                     </svg>
                     <span class="nav-label">Ordeals</span>
                 </a>
-                <a href="chronicle.html">
+                <a href="chronicle.html" class="nav-active">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M4 5h16v15H4V5zM4 9h16M8 3v4M16 3v4M8 13h2M12 13h2M16 13h2M8 17h2"/>
                     </svg>
                     <span class="nav-label">Chronicle</span>
                 </a>
-                <a href="rankings.html" class="nav-active">
+                <a href="rankings.html">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M3 18h18M3 18l1-9 5 4 3-7 3 7 5-4 1 9"/>
                     </svg>
@@ -63,9 +71,9 @@
             </nav>
         </footer>
 
+        <script src="cordova.js"></script>
         <script src="js/shared.js"></script>
-        <script src="js/supabase.config.js"></script>
-        <script src="js/supabase.js"></script>
-        <script src="js/rankings.js"></script>
+        <script src="js/daylog.js"></script>
+        <script src="js/chronicle.js"></script>
     </body>
 </html>

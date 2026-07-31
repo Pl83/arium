@@ -16,11 +16,13 @@ function onDeviceReady(): void {
       title TEXT,
       completed INTEGER
     )`);
+    createDayLogTable(tx);
     // Delete Account runs on profile.html, which has no database handle of its
     // own. It clears localStorage and leaves this flag so the objectives table
     // is emptied here, before anything reseeds it.
     if (localStorage.getItem('pendingWipe')) {
       tx.executeSql('DELETE FROM objectives');
+      tx.executeSql('DELETE FROM day_log');
       localStorage.removeItem('pendingWipe');
     }
   }, err => {
@@ -68,13 +70,38 @@ function maybeShowNameSetup(callback: () => void): void {
 
 // --- Daily reset ---
 
+// lastOpened holds toDateString() output ("Wed Jul 31 2026"), which neither
+// sorts nor compares. lastOpenedISO carries the same instant in 'YYYY-MM-DD'
+// form for the Chronicle. lastOpened itself is left untouched — other code
+// still reads it.
+function migrateLastOpenedISO(): string | null {
+  const iso = localStorage.getItem('lastOpenedISO');
+  if (iso) return iso;
+  const legacy = localStorage.getItem('lastOpened');
+  if (!legacy) return null;
+  const parsed = new Date(legacy);
+  if (isNaN(parsed.getTime())) return null;
+  const derived = localDayKey(parsed);
+  localStorage.setItem('lastOpenedISO', derived);
+  return derived;
+}
+
 function handleDailyReset(callback: () => void): void {
   const today = new Date().toDateString();
+  const todayKey = localDayKey(new Date());
   const lastOpened = localStorage.getItem('lastOpened');
+  migrateLastOpenedISO();
+
   if (lastOpened !== today) {
     localStorage.setItem('lastOpened', today);
-    checkYesterdayCompletion(() => resetObjectives(callback));
+    // lastOpenedISO is advanced only AFTER the history write, because
+    // recordClosedDays (Task 5) reads it to learn where the gap starts.
+    checkYesterdayCompletion(() => {
+      localStorage.setItem('lastOpenedISO', todayKey);
+      resetObjectives(callback);
+    });
   } else {
+    localStorage.setItem('lastOpenedISO', todayKey);
     callback();
   }
 }
@@ -84,7 +111,13 @@ function checkYesterdayCompletion(next: () => void): void {
     tx.executeSql('SELECT COUNT(*) as total FROM objectives', [], (tx, res) => {
       const total = (res.rows.item(0) as { total: number }).total;
       tx.executeSql('SELECT COUNT(*) as done FROM objectives WHERE completed = 1', [], (_tx, res2) => {
-        applyStreakAndPenalty(total, (res2.rows.item(0) as { done: number }).done);
+        const done = (res2.rows.item(0) as { done: number }).done;
+        // recordClosedDays MUST run before applyStreakAndPenalty: it reads the
+        // pre-mutation 'streak' from localStorage, and applyStreakAndPenalty
+        // overwrites that same key. Swapping this order silently changes the
+        // streak value written into day_log.
+        recordClosedDays(total, done);
+        applyStreakAndPenalty(total, done);
       });
     });
   }, err => {
@@ -93,6 +126,25 @@ function checkYesterdayCompletion(next: () => void): void {
   }, () => {
     next();
   });
+}
+
+// Writes the day just ended, then fills the days the app never saw.
+// Reads lastOpenedISO itself rather than taking it as a parameter, which
+// keeps checkYesterdayCompletion's arity unchanged for existing callers.
+// Deliberately separate from applyStreakAndPenalty: the record is written
+// here, the punishment is decided there, and adding history must not change
+// any player's Cosmo by a single point.
+function recordClosedDays(total: number, done: number): void {
+  const lastKey = localStorage.getItem('lastOpenedISO');
+  if (total === 0 || !lastKey) return;
+  const todayKey = localDayKey(new Date());
+  if (lastKey >= todayKey) return;
+
+  const streak = parseInt(localStorage.getItem('streak') || '0', 10);
+  const closingStreak = done === total ? streak + 1 : 0;
+
+  finalizeDay(db, lastKey, done, total, closingStreak);
+  backfillGap(db, lastKey, todayKey, total);
 }
 
 function applyStreakAndPenalty(total: number, done: number): void {
@@ -287,6 +339,10 @@ function init(): void {
           }, err => {
             console.error('Update error', err);
           }, () => {
+            // completedCount reflects the list as rendered, before this click
+            const dayDone = completedCount + (newCompleted === 1 ? 1 : -1);
+            bumpToday(db, { xpDelta: xpDelta, done: dayDone, total: total });
+
             const oldXP = getTotalXP();
             const newXP = Math.max(0, oldXP + xpDelta);
             localStorage.setItem('totalXP', String(newXP));
@@ -345,7 +401,9 @@ if (typeof module !== 'undefined') {
   global.onDeviceReady            = onDeviceReady;
   global.maybeShowNameSetup       = maybeShowNameSetup;
   global.handleDailyReset         = handleDailyReset;
+  global.migrateLastOpenedISO     = migrateLastOpenedISO;
   global.checkYesterdayCompletion = checkYesterdayCompletion;
+  global.recordClosedDays         = recordClosedDays;
   global.applyStreakAndPenalty    = applyStreakAndPenalty;
   global.showPenaltyModal         = showPenaltyModal;
   global.showRankUpModal          = showRankUpModal;
@@ -356,7 +414,7 @@ if (typeof module !== 'undefined') {
   global.animateBar               = animateBar;
   global.init                     = init;
   module.exports = {
-    onDeviceReady, maybeShowNameSetup, handleDailyReset, checkYesterdayCompletion, applyStreakAndPenalty,
+    onDeviceReady, maybeShowNameSetup, handleDailyReset, migrateLastOpenedISO, checkYesterdayCompletion, recordClosedDays, applyStreakAndPenalty,
     showPenaltyModal, showRankUpModal, resetObjectives, seedInitialObjectives,
     refreshLevelBar, updateNameTag, animateBar, init,
   };

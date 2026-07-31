@@ -7,6 +7,22 @@ const XP_PER_CHALLENGE_EX = 8;
 const REST_SECONDS        = 30;
 const TRANSITION_SECONDS  = 15;
 
+// Trial mode has no database of its own; it opens fitness.db only to record
+// the Cosmo it awards. On the browser platform, and in tests, the plugin may
+// be absent — every use is guarded rather than assumed.
+let trialDb: SQLiteDatabase | null = null;
+
+function openTrialDb(): void {
+  if (!window.sqlitePlugin) return;
+  trialDb = window.sqlitePlugin.openDatabase({ name: 'fitness.db', location: 'default' });
+  trialDb.transaction(tx => createDayLogTable(tx));
+}
+
+function recordTrialXP(xp: number): void {
+  if (!trialDb) return;
+  bumpToday(trialDb, { xpDelta: xp });
+}
+
 // ── Exercise catalogue ────────────────────────────────────────────────────
 
 function exScale(ex: BaseExercise, level: number): number {
@@ -554,6 +570,7 @@ function showComplete(): void {
   clearClock();
   const xpActual = XP_BASE_TRIAL + s.setsCompleted * XP_PER_SET;
   localStorage.setItem('totalXP', String(getTotalXP() + xpActual));
+  recordTrialXP(xpActual);
   const done = parseInt(localStorage.getItem('totalCompleted') || '0', 10);
   localStorage.setItem('totalCompleted', String(done + s.setsCompleted));
 
@@ -583,6 +600,7 @@ function showChallengeComplete(): void {
   clearClock();
   const xpActual = XP_BASE_CHALLENGE + s.setsCompleted * XP_PER_CHALLENGE_EX;
   localStorage.setItem('totalXP', String(getTotalXP() + xpActual));
+  recordTrialXP(xpActual);
   const done = parseInt(localStorage.getItem('totalCompleted') || '0', 10);
   localStorage.setItem('totalCompleted', String(done + s.setsCompleted));
 
@@ -611,6 +629,7 @@ function showChallengeComplete(): void {
 /* istanbul ignore next */
 if (typeof module === 'undefined') {
   showExerciseList();
+  document.addEventListener('deviceready', openTrialDb, false);
 }
 
 // === NODE/JEST EXPORT — invisible in browser ===
@@ -636,11 +655,14 @@ if (typeof module !== 'undefined') {
   global.showChallengeComplete = showChallengeComplete;
   global.finishSet             = finishSet;
   global.onRepTap              = onRepTap;
+  global.openTrialDb           = openTrialDb;
+  global.recordTrialXP         = recordTrialXP;
   module.exports = {
     exScale, fmt, calcSoloXP, calcChallengeXP,
     resetSoloState, resetChallengeState, showExerciseList, showConfigure,
     showChallengeDetail, showRepSet, showTimedSet, showRest, showChallengeRest,
     showRoundComplete, showComplete, showChallengeComplete, finishSet, onRepTap,
+    openTrialDb, recordTrialXP,
     getS: () => s,
     setS: (val: TrialState) => { s = val; },
   };

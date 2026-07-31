@@ -343,6 +343,8 @@ main {
 .rank-section,
 .challenge-card,
 .complete-card,
+.chronicle-card,
+.day-detail,
 #info {
   position: relative;
   isolation: isolate;
@@ -365,6 +367,7 @@ main {
 .profile-card::before,
 .stats-card::before,
 .complete-card::before,
+.chronicle-card::before,
 #info::before {
   content: '';
   position: absolute;

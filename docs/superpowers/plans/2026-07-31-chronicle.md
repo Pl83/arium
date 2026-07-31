@@ -84,7 +84,9 @@ describe('parseDayKey', () => {
   });
 
   it('round-trips with localDayKey', () => {
-    expect(localDayKey(parseDayKey('2026-02-29'))).toBe('2026-02-29');
+    // 2024, not 2026 — 2026 is not a leap year, so 2026-02-29 does not exist
+    // and new Date(2026, 1, 29) rolls over to 1 March.
+    expect(localDayKey(parseDayKey('2024-02-29'))).toBe('2024-02-29');
   });
 });
 
@@ -126,8 +128,10 @@ Add to `src/shared.ts`, immediately before the `// === NODE/JEST EXPORT` comment
 // files a 23:30 session under tomorrow for anyone east of Greenwich.
 
 function localDayKey(d: Date): string {
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+  // ('0' + n).slice(-2), not padStart — padStart is ES2017 and tsconfig
+  // declares lib: ["ES6", "DOM", "DOM.Iterable"], so it does not compile here.
+  const m   = ('0' + (d.getMonth() + 1)).slice(-2);
+  const day = ('0' + d.getDate()).slice(-2);
   return d.getFullYear() + '-' + m + '-' + day;
 }
 
@@ -175,8 +179,17 @@ git commit -m "feat: add local date-key helpers for the Chronicle"
 ### Task 2: Extend the SQLite mock with per-query responses
 
 **Files:**
-- Modify: `tests/helpers/sqlite-mock.ts`
+- Modify: `tests/helpers/sqlite-mock.js` — **the file Jest actually loads**
+- Modify: `tests/helpers/sqlite-mock.ts` — kept in sync; both are tracked
 - Test: `tests/daylog.test.ts` (created in Task 3 — this task is verified by the existing suite staying green)
+
+**⚠️ Both files must be edited.** `jest.config.js` does not set `moduleFileExtensions`, so
+Node's default order applies and `js` precedes `ts`. `require('./helpers/sqlite-mock')`
+therefore resolves **`sqlite-mock.js`**; the `.ts` file is currently dead weight that is
+nonetheless tracked in git. Editing only the `.ts` changes nothing at runtime and every
+later task's `responses` test fails with no visible cause. The two files differ today by
+exactly one line — `window.sqlitePlugin` vs `(window as any).sqlitePlugin` — so keep that
+difference and change nothing else about their relationship.
 
 **Interfaces:**
 - Consumes: nothing
@@ -233,6 +246,10 @@ function createSQLiteMock({ rows = [], failOn = false, responses = null } = {}) 
 
 module.exports = { createSQLiteMock };
 ```
+
+Then apply the identical change to `tests/helpers/sqlite-mock.js`, substituting
+`window.sqlitePlugin` for `(window as any).sqlitePlugin` on that one line — the only
+difference between the two files.
 
 The `rows` fallback is unchanged, so every existing call site behaves exactly as before.
 
@@ -430,10 +447,25 @@ describe('backfillGap', () => {
     expect(mockTx.executeSql.mock.calls.length).toBe(366);
   });
 
-  it('stores the given total on every backfilled day', () => {
+  it('binds the given total to the total column, not done', () => {
     const { mockDb, mockTx } = createSQLiteMock();
     backfillGap(mockDb, '2026-07-28', '2026-07-31', 5);
+    // Asserting the bind array ALONE is worthless here: ['2026-07-29', 5] is
+    // identical whether the 5 lands in `done` or in `total`. The SQL text is
+    // what pins the column mapping.
+    expect(mockTx.executeSql.mock.calls[0][0]).toContain('VALUES (?, 0, ?, 0, 0)');
     expect(mockTx.executeSql.mock.calls[0][1]).toEqual(['2026-07-29', 5]);
+  });
+
+  it('keeps the most recent days when the cap trips', () => {
+    const { mockDb, mockTx } = createSQLiteMock();
+    backfillGap(mockDb, '2020-01-01', '2026-07-31', 5);
+    const days = mockTx.executeSql.mock.calls
+      .filter((c: any[]) => c[0].indexOf('INSERT OR IGNORE') !== -1)
+      .map((c: any[]) => c[1][0]);
+    expect(days.length).toBe(366);
+    // The day before toKey must be present; the ancient end is what gets dropped.
+    expect(days[days.length - 1]).toBe('2026-07-30');
   });
 });
 
@@ -584,19 +616,28 @@ function backfillGap(
   db: SQLiteDatabase, fromKey: string, toKey: string, total: number, cb?: () => void
 ): void {
   const days: string[] = [];
-  let cur = dayKeyAddDays(fromKey, 1);
-  while (cur < toKey && days.length < MAX_BACKFILL_DAYS) {
+  // Walk BACKWARD from the day before toKey. When the cap trips on an absurd
+  // gap — a device clock jump of years — the days kept are then the RECENT
+  // ones. Walking forward would retain the oldest 366 days and silently drop
+  // everything the player might actually care about.
+  let cur = dayKeyAddDays(toKey, -1);
+  while (cur > fromKey && days.length < MAX_BACKFILL_DAYS) {
     days.push(cur);
-    cur = dayKeyAddDays(cur, 1);
+    cur = dayKeyAddDays(cur, -1);
   }
+  days.reverse();   // restore ascending order for the inserts
   if (days.length === 0) {
     if (cb) cb();
     return;
   }
   db.transaction(tx => {
     days.forEach(d => {
+      // VALUES (?, 0, ?, 0, 0) — the second placeholder is the THIRD column.
+      // (?, ?, 0, 0, 0) would bind `total` into `done` and store 5/0 for a day
+      // the player never opened. It still renders as "missed", so the error is
+      // invisible; and INSERT OR IGNORE means a later release cannot repair it.
       tx.executeSql(
-        'INSERT OR IGNORE INTO day_log (day, done, total, xp, streak) VALUES (?, ?, 0, 0, 0)',
+        'INSERT OR IGNORE INTO day_log (day, done, total, xp, streak) VALUES (?, 0, ?, 0, 0)',
         [d, total]
       );
     });
@@ -766,6 +807,17 @@ In `src/index.ts`, inside the existing `db.transaction` in `onDeviceReady`, imme
 ```ts
     createDayLogTable(tx);
 ```
+
+- [ ] **Step 3b: Load `daylog.js` on the home page**
+
+In `www/index.html`, add `<script src="js/daylog.js"></script>` between the `shared.js` and
+`index.js` tags. Order matters: `daylog.js` needs `localDayKey` from `shared.js`, and
+`index.js` needs `createDayLogTable` from `daylog.js`.
+
+**This cannot wait for Task 10.** From this task onward `index.ts` calls into `daylog.js`
+at runtime, and the Jest suite will not catch its absence — `tests/setup.ts` requires the
+modules directly, bypassing the page's script tags entirely. Without this line the browser
+build throws `ReferenceError` on launch while every test stays green.
 
 - [ ] **Step 4: Migrate the date key**
 
@@ -1301,6 +1353,12 @@ describe('cellState', () => {
     expect(cellState(row('2026-07-15', 0, 0, 40), '2026-07-15', START, TODAY)).toBe('partial');
   });
 
+  it('is partial when no objective was completed but Cosmo was earned', () => {
+    // Reachable: toggle an objective on then off (total 5, done 0), then run
+    // a Trial. Must agree with monthSummary, which counts this day as trained.
+    expect(cellState(row('2026-07-15', 0, 5, 40), '2026-07-15', START, TODAY)).toBe('partial');
+  });
+
   it('is missed for an empty day with no objective denominator', () => {
     expect(cellState(row('2026-07-15', 0, 0, 0), '2026-07-15', START, TODAY)).toBe('missed');
   });
@@ -1391,6 +1449,14 @@ describe('monthSummary', () => {
     ])).toEqual({ trained: 2, xp: 175 });
   });
 
+  it('agrees with cellState on a Cosmo-only day that has a denominator', () => {
+    // total 5, done 0, xp 40 — cellState calls this partial, so the summary
+    // must call it trained. These two rules diverging is the bug this pins.
+    const rows = [row('2026-07-04', 0, 5, 40)];
+    expect(monthSummary(rows).trained).toBe(1);
+    expect(cellState(rows[0], '2026-07-04', '2026-07-01', '2026-07-31')).toBe('partial');
+  });
+
   it('is zero for an empty month', () => {
     expect(monthSummary([])).toEqual({ trained: 0, xp: 0 });
   });
@@ -1428,13 +1494,13 @@ function cellState(
 ): CellState {
   if (!startKey || dayKey < startKey || dayKey > todayKey) return 'blank';
   if (!r) return 'missed';
-  if (r.total > 0) {
-    if (r.done >= r.total) return 'full';
-    return r.done > 0 ? 'partial' : 'missed';
-  }
-  // No objective denominator: a trial-only day. Training without touching
-  // the daily ordeals is not nothing and must not render as an empty day.
-  return r.xp > 0 ? 'partial' : 'missed';
+  if (r.total > 0 && r.done >= r.total) return 'full';
+  // Cosmo earned is evidence of training whatever the denominator says: a
+  // Trial-only day has total 0, but so does "seed the objectives, complete
+  // none, then run a Trial" with total 5. Neither may render as empty.
+  // monthSummary counts a trained day by this same rule — if the two diverge,
+  // the calendar shows a missed day the summary above it counts as trained.
+  return (r.done > 0 || r.xp > 0) ? 'partial' : 'missed';
 }
 
 // Monday-first. Leading nulls pad the first week; the array ends on the
@@ -1498,7 +1564,7 @@ In `jest.config.js`, add `'src/chronicle.ts',` to `collectCoverageFrom`.
 Run: `npx jest tests/chronicle.test.ts`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 npm run typecheck
@@ -1839,17 +1905,12 @@ git commit -m "feat: add the Chronicle page"
 
 **Files:**
 - Modify: `www/index.html`, `www/trial.html`, `www/profile.html`, `www/rankings.html`, `www/chronicle.html`
-- Modify: `www/index.html` only — add `<script src="js/daylog.js"></script>`
 
 **Interfaces:**
 - Consumes: `www/chronicle.html` (Task 9)
 - Produces: nothing
 
-- [ ] **Step 1: Add the script tag index.ts needs**
-
-In `www/index.html`, add `<script src="js/daylog.js"></script>` between the `shared.js` and `index.js` tags. Without this, every `bumpToday` and `finalizeDay` call from Tasks 5 and 6 throws `ReferenceError` at runtime — the Jest suite will not catch it because `tests/setup.ts` loads modules directly.
-
-- [ ] **Step 2: Add the nav entry to all five pages**
+- [ ] **Step 1: Add the nav entry to all five pages**
 
 In each of the five pages, inside `<nav>`, between the Ordeals link and the Ranks link:
 
@@ -1868,7 +1929,7 @@ In each of the five pages, inside `<nav>`, between the Ordeals link and the Rank
 
 On `chronicle.html` this link carries `class="nav-active"`. On the other four it does not. On `chronicle.html`, remove `nav-active` from whichever link currently has it.
 
-- [ ] **Step 3: Verify every page has five entries**
+- [ ] **Step 2: Verify every page has five entries**
 
 Run:
 ```bash
@@ -1876,7 +1937,7 @@ for f in www/index.html www/trial.html www/profile.html www/rankings.html www/ch
 ```
 Expected: `5` for all five files.
 
-- [ ] **Step 4: Verify the nav still fits**
+- [ ] **Step 3: Verify the nav still fits**
 
 ```bash
 npm run build
@@ -1884,7 +1945,7 @@ cordova run browser
 ```
 Check at a 360px-wide viewport that all five labels are legible and none wrap. If they collide, shorten the label to "Log" rather than shrinking the font below the other four.
 
-- [ ] **Step 5: Full verification**
+- [ ] **Step 4: Full verification**
 
 ```bash
 npm run typecheck
@@ -1893,7 +1954,7 @@ npm run build
 ```
 Expected: typecheck clean, all tests pass, build clean.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add www/*.html

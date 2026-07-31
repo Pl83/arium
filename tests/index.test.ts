@@ -35,6 +35,9 @@ beforeEach(() => {
   jest.resetModules();
   // Re-load shared so its globals survive resetModules
   require('../src/shared');
+  // daylog.ts must load before index.ts (mirrors browser script order) —
+  // index.ts calls createDayLogTable at runtime from onDeviceReady.
+  require('../src/daylog');
   // notifications.ts must load before index.ts (mirrors browser script order)
   require('../src/notifications');
   require('../src/index');
@@ -558,5 +561,258 @@ describe('pendingWipe', () => {
     const { mockTx } = createSQLiteMock({ rows: [{ count: 2, id: 1, title: 'Push-Ups [0/20]', completed: 0 }] });
     (global as any).onDeviceReady();
     expect(sqlFor(mockTx).some(s => /DELETE FROM objectives/i.test(s))).toBe(false);
+  });
+
+  it('also empties day_log so a deleted account\'s history does not survive', () => {
+    localStorage.setItem('lastOpened', new Date().toDateString());
+    localStorage.setItem('pendingWipe', '1');
+    const { mockTx } = createSQLiteMock({ rows: [{ count: 2, id: 1, title: 'Push-Ups [0/20]', completed: 0 }] });
+    (global as any).onDeviceReady();
+    expect(sqlFor(mockTx).some(s => /DELETE FROM day_log/i.test(s))).toBe(true);
+    expect(sqlFor(mockTx).some(s => /DELETE FROM objectives/i.test(s))).toBe(true);
+    expect(localStorage.getItem('pendingWipe')).toBeNull();
+  });
+});
+
+// ── day_log bootstrap ─────────────────────────────────────────────────────────
+
+describe('day_log bootstrap', () => {
+  it('creates the day_log table on device ready', () => {
+    localStorage.setItem('lastOpened', new Date().toDateString());
+    // title/completed included so the same fallback row also satisfies init()'s
+    // later `SELECT * FROM objectives` render pass without crashing on obj.title.
+    const { mockTx } = createSQLiteMock({ rows: [{ count: 1, total: 1, done: 1, title: 'Push-Ups [0/20]', completed: 0 }] });
+    onDeviceReady();
+    const created = mockTx.executeSql.mock.calls
+      .some((c: any[]) => c[0].indexOf('CREATE TABLE IF NOT EXISTS day_log') !== -1);
+    expect(created).toBe(true);
+  });
+});
+
+// ── lastOpenedISO migration ────────────────────────────────────────────────────
+
+describe('lastOpenedISO migration', () => {
+  it('derives lastOpenedISO from a legacy lastOpened value', () => {
+    localStorage.setItem('lastOpened', 'Wed Jul 29 2026');
+    expect(migrateLastOpenedISO()).toBe('2026-07-29');
+    expect(localStorage.getItem('lastOpenedISO')).toBe('2026-07-29');
+  });
+
+  it('keeps an existing lastOpenedISO rather than re-deriving it', () => {
+    localStorage.setItem('lastOpened', 'Wed Jul 29 2026');
+    localStorage.setItem('lastOpenedISO', '2026-07-20');
+    expect(migrateLastOpenedISO()).toBe('2026-07-20');
+  });
+
+  it('returns null for an unparseable legacy value', () => {
+    localStorage.setItem('lastOpened', 'not a date');
+    expect(migrateLastOpenedISO()).toBeNull();
+    expect(localStorage.getItem('lastOpenedISO')).toBeNull();
+  });
+
+  it('returns null when there is no legacy value at all', () => {
+    expect(migrateLastOpenedISO()).toBeNull();
+  });
+
+  it('writes lastOpenedISO on a first-ever launch', () => {
+    const { mockDb } = createSQLiteMock({ rows: [{ total: 0, done: 0 }] });
+    _setDb(mockDb);
+    handleDailyReset(() => {});
+    expect(localStorage.getItem('lastOpenedISO')).toBe(localDayKey(new Date()));
+  });
+
+  it('leaves lastOpened in its legacy format', () => {
+    const { mockDb } = createSQLiteMock({ rows: [{ total: 0, done: 0 }] });
+    _setDb(mockDb);
+    handleDailyReset(() => {});
+    expect(localStorage.getItem('lastOpened')).toBe(new Date().toDateString());
+  });
+});
+
+// ── history on daily reset ────────────────────────────────────────────────────
+
+describe('history on daily reset', () => {
+  it('finalizes yesterday from the live objectives counts', () => {
+    localStorage.setItem('lastOpened', 'old');
+    localStorage.setItem('lastOpenedISO', dayKeyAddDays(localDayKey(new Date()), -1));
+    localStorage.setItem('streak', '4');
+    const { mockDb, mockTx } = createSQLiteMock({
+      responses: { 'as total': [{ total: 5 }], 'as done': [{ done: 5 }], 'SELECT * FROM day_log': [] },
+    });
+    _setDb(mockDb);
+    handleDailyReset(() => {});
+    const yesterday = dayKeyAddDays(localDayKey(new Date()), -1);
+    const write = mockTx.executeSql.mock.calls
+      .find((c: any[]) => c[0].indexOf('INSERT OR REPLACE INTO day_log') !== -1);
+    expect(write[1][0]).toBe(yesterday);
+    expect(write[1][1]).toBe(5);  // done
+    expect(write[1][2]).toBe(5);  // total
+    // Pins call order: recordClosedDays must read 'streak' (set to '4' above)
+    // BEFORE applyStreakAndPenalty overwrites it. If the two calls in
+    // checkYesterdayCompletion were swapped, this would silently become 6.
+    expect(write[1][4]).toBe(5);  // streak (closingStreak = 4 + 1)
+  });
+
+  it('backfills the days of a multi-day absence', () => {
+    const todayKey = localDayKey(new Date());
+    localStorage.setItem('lastOpened', 'old');
+    localStorage.setItem('lastOpenedISO', dayKeyAddDays(todayKey, -4));
+    const { mockDb, mockTx } = createSQLiteMock({
+      responses: { 'as total': [{ total: 5 }], 'as done': [{ done: 0 }], 'SELECT * FROM day_log': [] },
+    });
+    _setDb(mockDb);
+    handleDailyReset(() => {});
+    const filled = mockTx.executeSql.mock.calls
+      .filter((c: any[]) => c[0].indexOf('INSERT OR IGNORE INTO day_log') !== -1)
+      .map((c: any[]) => c[1][0]);
+    expect(filled).toEqual([
+      dayKeyAddDays(todayKey, -3),
+      dayKeyAddDays(todayKey, -2),
+      dayKeyAddDays(todayKey, -1),
+    ]);
+  });
+
+  it('deducts exactly one day of penalty however long the absence', () => {
+    localStorage.setItem('lastOpened', 'old');
+    localStorage.setItem('lastOpenedISO', dayKeyAddDays(localDayKey(new Date()), -10));
+    localStorage.setItem('totalXP', '1000');
+    const { mockDb } = createSQLiteMock({
+      responses: { 'as total': [{ total: 5 }], 'as done': [{ done: 0 }], 'SELECT * FROM day_log': [] },
+    });
+    _setDb(mockDb);
+    handleDailyReset(() => {});
+    // 5 missed × 15 = 75, once — not once per absent day
+    expect(localStorage.getItem('totalXP')).toBe('925');
+  });
+
+  it('writes no history when there are no objectives yet', () => {
+    localStorage.setItem('lastOpened', 'old');
+    const { mockDb, mockTx } = createSQLiteMock({
+      responses: { 'as total': [{ total: 0 }], 'as done': [{ done: 0 }] },
+    });
+    _setDb(mockDb);
+    handleDailyReset(() => {});
+    const wrote = mockTx.executeSql.mock.calls
+      .some((c: any[]) => c[0].indexOf('INTO day_log') !== -1);
+    expect(wrote).toBe(false);
+  });
+
+  it('pins chronicleStart to the closed day, not today or yesterday, after a multi-day gap', () => {
+    const todayKey = localDayKey(new Date());
+    const lastKey = dayKeyAddDays(todayKey, -4);
+    localStorage.setItem('lastOpened', 'old');
+    localStorage.setItem('lastOpenedISO', lastKey);
+    const { mockDb } = createSQLiteMock({
+      responses: { 'as total': [{ total: 5 }], 'as done': [{ done: 0 }], 'SELECT * FROM day_log': [] },
+    });
+    _setDb(mockDb);
+    handleDailyReset(() => {});
+    expect(localStorage.getItem('chronicleStart')).toBe(lastKey);
+    expect(localStorage.getItem('chronicleStart')).not.toBe(todayKey);
+    expect(localStorage.getItem('chronicleStart')).not.toBe(dayKeyAddDays(todayKey, -1));
+  });
+});
+
+// ── recordClosedDays guard clauses ────────────────────────────────────────────
+// Both guards below are real, reachable defensive paths, not dead code:
+// - !lastKey fires when lastOpened is present but unparseable — the shape of
+//   a WebView localStorage eviction that leaves fitness.db intact.
+//   migrateLastOpenedISO returns null in that case and does NOT set
+//   lastOpenedISO, so recordClosedDays' lastKey stays null.
+// - lastKey >= todayKey fires on a backward clock jump or a timezone move,
+//   where lastOpenedISO is already today or later. Without this guard,
+//   finalizeDay would INSERT OR REPLACE a current-or-future day's row with
+//   the closed day's counts and pin chronicleStart wrongly.
+// Both are driven end-to-end through handleDailyReset, exactly as they would
+// fire in the app, rather than by calling recordClosedDays directly.
+
+describe('recordClosedDays guard clauses', () => {
+  it('writes nothing when lastOpened is unparseable, leaving lastOpenedISO unset, even with objectives present', () => {
+    localStorage.setItem('lastOpened', 'not-a-date');
+    const { mockDb, mockTx } = createSQLiteMock({
+      responses: { 'as total': [{ total: 5 }], 'as done': [{ done: 0 }], 'SELECT * FROM day_log': [] },
+    });
+    _setDb(mockDb);
+    handleDailyReset(() => {});
+    const wrote = mockTx.executeSql.mock.calls
+      .some((c: any[]) => c[0].indexOf('INTO day_log') !== -1);
+    expect(wrote).toBe(false);
+  });
+
+  it('writes nothing when lastOpenedISO is already today or later (clock jump / timezone move)', () => {
+    localStorage.setItem('lastOpened', 'old');
+    localStorage.setItem('lastOpenedISO', dayKeyAddDays(localDayKey(new Date()), 2));
+    const { mockDb, mockTx } = createSQLiteMock({
+      responses: { 'as total': [{ total: 5 }], 'as done': [{ done: 0 }], 'SELECT * FROM day_log': [] },
+    });
+    _setDb(mockDb);
+    handleDailyReset(() => {});
+    const wrote = mockTx.executeSql.mock.calls
+      .some((c: any[]) => c[0].indexOf('INTO day_log') !== -1);
+    expect(wrote).toBe(false);
+  });
+});
+
+// ── today's row on objective toggle ───────────────────────────────────────────
+
+describe('today\'s row on objective toggle', () => {
+  function toggleFirstObjective(responses: any) {
+    localStorage.setItem('lastOpened', new Date().toDateString());
+    const { mockDb, mockTx } = createSQLiteMock({ responses });
+    _setDb(mockDb);
+    init();
+    (document.querySelector('.center ul li') as HTMLElement).click();
+    return mockTx;
+  }
+
+  it('adds the objective\'s Cosmo to today\'s row', () => {
+    const mockTx = toggleFirstObjective({
+      'SELECT * FROM objectives': [{ id: 1, title: 'Push-Ups [0/20]', completed: 0 }],
+      'SELECT * FROM day_log': [],
+    });
+    const todayKey = localDayKey(new Date());
+    const write = mockTx.executeSql.mock.calls
+      .find((c: any[]) => c[0].indexOf('INSERT OR REPLACE INTO day_log') !== -1);
+    expect(write[1][0]).toBe(todayKey);
+    expect(write[1][3]).toBe(25); // xp
+  });
+
+  it('subtracts on un-toggle and floors at zero', () => {
+    const mockTx = toggleFirstObjective({
+      'SELECT * FROM objectives': [{ id: 1, title: 'Push-Ups [0/20]', completed: 1 }],
+      'SELECT * FROM day_log': [{ day: localDayKey(new Date()), done: 1, total: 5, xp: 10, streak: 0 }],
+    });
+    const write = mockTx.executeSql.mock.calls
+      .find((c: any[]) => c[0].indexOf('INSERT OR REPLACE INTO day_log') !== -1);
+    expect(write[1][3]).toBe(0);
+  });
+
+  it('records the day\'s done and total counts', () => {
+    const mockTx = toggleFirstObjective({
+      'SELECT * FROM objectives': [{ id: 1, title: 'Push-Ups [0/20]', completed: 0 }],
+      'SELECT * FROM day_log': [],
+    });
+    const write = mockTx.executeSql.mock.calls
+      .find((c: any[]) => c[0].indexOf('INSERT OR REPLACE INTO day_log') !== -1);
+    expect(write[1][1]).toBe(1); // done
+    expect(write[1][2]).toBe(1); // total — one objective in this fixture
+  });
+
+  // completedCount is the PRE-click count. Among 3 objectives with 2 already
+  // complete, un-toggling one of the completed ones must bring done from 2
+  // down to 1 — not up to 3. A sign flip in the +1/-1 branch would pass the
+  // single-objective tests above (they only ever move 0<->1) but fails here.
+  it('decrements done — not increments — on an un-toggle among multiple objectives', () => {
+    const mockTx = toggleFirstObjective({
+      'SELECT * FROM objectives': [
+        { id: 1, title: 'Push-Ups [0/20]', completed: 1 },
+        { id: 2, title: 'Sit-Ups [0/20]', completed: 1 },
+        { id: 3, title: 'Squats [0/20]', completed: 0 },
+      ],
+      'SELECT * FROM day_log': [{ day: localDayKey(new Date()), done: 2, total: 3, xp: 50, streak: 0 }],
+    });
+    const write = mockTx.executeSql.mock.calls
+      .find((c: any[]) => c[0].indexOf('INSERT OR REPLACE INTO day_log') !== -1);
+    expect(write[1][1]).toBe(1); // done: completedCount(2) - 1, must not be 3
   });
 });
