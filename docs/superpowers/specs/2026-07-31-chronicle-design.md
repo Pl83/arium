@@ -63,8 +63,10 @@ Created in the same `db.transaction` block as `objectives`, in `onDeviceReady`.
 display strings say Cosmo. A new table is not a licence to break the rule — if new storage
 picks whichever word feels right, the split stops being a convention and becomes a coin flip.
 
-**`total` is stored per row, not assumed to be 4.** Goal count is currently fixed at four by
-`GOAL_CONFIG`, but a row that hardcodes its own denominator survives that changing later.
+**`total` is stored per row, never assumed.** `GOAL_CONFIG` (`src/shared.ts:25`) currently
+holds five goals — Push-Ups, Sit-Ups, Squats, Plank, Stretch — but it has changed before and
+will change again. A row that carries its own denominator survives that; a hardcoded one
+silently rewrites history every time the list grows.
 
 **`xp` is earnings only, never negative.** Missed-day penalties are applied to `totalXP` by
 the existing `applyStreakAndPenalty` and are not written into `day_log`. Mixing rewards and
@@ -135,7 +137,7 @@ During the day, `bumpToday` is called from:
   `objectives` and must not start doing so; it omits `done` and `total` and leaves whatever
   `index.ts` has already written intact.
 
-Both paths write the same row. A day containing four objectives and two trial runs is one
+Both paths write the same row. A day containing five objectives and two trial runs is one
 row, not three.
 
 ### Record and punishment stay decoupled
@@ -173,7 +175,7 @@ The icon is an inline SVG using `currentColor`, matching the existing four.
 │              …              │
 ├─────────────────────────────┤
 │  WED 29 JUL                 │   detail strip
-│  4/4 ordeals · +100 Cosmo   │
+│  5/5 ordeals · +125 Cosmo   │
 └─────────────────────────────┘
 ```
 
