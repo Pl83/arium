@@ -19,13 +19,13 @@ function cellState(
 ): CellState {
   if (!startKey || dayKey < startKey || dayKey > todayKey) return 'blank';
   if (!r) return 'missed';
-  if (r.total > 0) {
-    if (r.done >= r.total) return 'full';
-    return r.done > 0 ? 'partial' : 'missed';
-  }
-  // No objective denominator: a trial-only day. Training without touching
-  // the daily ordeals is not nothing and must not render as an empty day.
-  return r.xp > 0 ? 'partial' : 'missed';
+  if (r.total > 0 && r.done >= r.total) return 'full';
+  // Cosmo earned is evidence of training whatever the denominator says: a
+  // Trial-only day has total 0, but so does "seed the objectives, complete
+  // none, then run a Trial" with total 5. Neither may render as empty.
+  // monthSummary counts a trained day by this same rule — if the two diverge,
+  // the calendar shows a missed day the summary above it counts as trained.
+  return (r.done > 0 || r.xp > 0) ? 'partial' : 'missed';
 }
 
 // Monday-first. Leading nulls pad the first week; the array ends on the

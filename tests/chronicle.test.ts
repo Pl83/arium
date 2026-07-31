@@ -44,6 +44,12 @@ describe('cellState', () => {
     expect(cellState(row('2026-07-15', 0, 5), '2026-07-15', START, TODAY)).toBe('missed');
   });
 
+  it('is partial when no objective was completed but Cosmo was earned', () => {
+    // Reachable: toggle an objective on then off (total 5, done 0), then run
+    // a Trial. Must agree with monthSummary, which counts this day as trained.
+    expect(cellState(row('2026-07-15', 0, 5, 40), '2026-07-15', START, TODAY)).toBe('partial');
+  });
+
   it('is partial for a trial-only day with no objective denominator', () => {
     expect(cellState(row('2026-07-15', 0, 0, 40), '2026-07-15', START, TODAY)).toBe('partial');
   });
@@ -140,5 +146,13 @@ describe('monthSummary', () => {
 
   it('is zero for an empty month', () => {
     expect(monthSummary([])).toEqual({ trained: 0, xp: 0 });
+  });
+
+  it('agrees with cellState on a Cosmo-only day that has a denominator', () => {
+    // total 5, done 0, xp 40 — cellState calls this partial, so the summary
+    // must call it trained. These two rules diverging is the bug this pins.
+    const rows = [row('2026-07-04', 0, 5, 40)];
+    expect(monthSummary(rows).trained).toBe(1);
+    expect(cellState(rows[0], '2026-07-04', '2026-07-01', '2026-07-31')).toBe('partial');
   });
 });
