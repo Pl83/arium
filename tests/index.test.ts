@@ -562,6 +562,16 @@ describe('pendingWipe', () => {
     (global as any).onDeviceReady();
     expect(sqlFor(mockTx).some(s => /DELETE FROM objectives/i.test(s))).toBe(false);
   });
+
+  it('also empties day_log so a deleted account\'s history does not survive', () => {
+    localStorage.setItem('lastOpened', new Date().toDateString());
+    localStorage.setItem('pendingWipe', '1');
+    const { mockTx } = createSQLiteMock({ rows: [{ count: 2, id: 1, title: 'Push-Ups [0/20]', completed: 0 }] });
+    (global as any).onDeviceReady();
+    expect(sqlFor(mockTx).some(s => /DELETE FROM day_log/i.test(s))).toBe(true);
+    expect(sqlFor(mockTx).some(s => /DELETE FROM objectives/i.test(s))).toBe(true);
+    expect(localStorage.getItem('pendingWipe')).toBeNull();
+  });
 });
 
 // ── day_log bootstrap ─────────────────────────────────────────────────────────

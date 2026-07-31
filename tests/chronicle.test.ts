@@ -157,6 +157,34 @@ describe('monthSummary', () => {
   });
 });
 
+describe('isTrainedDay', () => {
+  it('is true when objectives were completed', () => {
+    expect(isTrainedDay(row('2026-07-01', 2, 5))).toBe(true);
+  });
+
+  it('is true when Cosmo was earned with no objective denominator', () => {
+    expect(isTrainedDay(row('2026-07-01', 0, 0, 40))).toBe(true);
+  });
+
+  it('is false for an empty day', () => {
+    expect(isTrainedDay(row('2026-07-01', 0, 5, 0))).toBe(false);
+  });
+});
+
+describe('trainedDaysTotal', () => {
+  it('counts trained days across the whole history, agreeing with monthSummary', () => {
+    const rows = [
+      row('2026-06-01', 5, 5, 125), row('2026-06-02', 0, 5, 0), row('2026-07-01', 0, 0, 40),
+    ];
+    expect(trainedDaysTotal(rows)).toBe(2);
+    expect(monthSummary(rows).trained).toBe(2);
+  });
+
+  it('is zero for an empty history', () => {
+    expect(trainedDaysTotal([])).toBe(0);
+  });
+});
+
 const CHRONICLE_DOM = `
   <section class="chronicle-card">
     <p id="streakLine"></p>
@@ -209,6 +237,11 @@ describe('renderMonth', () => {
     expect(() => renderMonth([], 2026, 7, '2026-07-31')).not.toThrow();
   });
 
+  it('appends the month\'s Cosmo total to the trained-days line', () => {
+    renderMonth([row('2026-07-01', 5, 5, 125), row('2026-07-02', 2, 5, 50)], 2026, 7, '2026-07-31');
+    expect(document.getElementById('monthLine')!.textContent).toBe('2 days trained this month  ·  175 Cosmo');
+  });
+
   it('shows a day\'s detail when its cell is clicked', () => {
     localStorage.setItem('chronicleStart', '2026-07-01');
     renderMonth([row('2026-07-01', 5, 5, 125)], 2026, 7, '2026-07-31');
@@ -240,12 +273,14 @@ describe('renderStreakLine', () => {
   it('shows the current streak and the best of current/longest', () => {
     localStorage.setItem('streak', '3');
     renderStreakLine([row('2026-07-01', 5, 5), row('2026-07-02', 5, 5)]);
-    expect(document.getElementById('streakLine')!.textContent).toBe('3 day streak  ·  best 3');
+    expect(document.getElementById('streakLine')!.textContent)
+      .toBe('3 day streak  ·  best 3  ·  2 days trained total');
   });
 
   it('defaults the current streak to 0 when unset', () => {
     renderStreakLine([]);
-    expect(document.getElementById('streakLine')!.textContent).toBe('0 day streak  ·  best 0');
+    expect(document.getElementById('streakLine')!.textContent)
+      .toBe('0 day streak  ·  best 0  ·  0 days trained total');
   });
 
   it('reports the longest streak in history when it exceeds the current one', () => {
@@ -253,7 +288,13 @@ describe('renderStreakLine', () => {
     renderStreakLine([
       row('2026-07-01', 5, 5), row('2026-07-02', 5, 5), row('2026-07-03', 5, 5),
     ]);
-    expect(document.getElementById('streakLine')!.textContent).toBe('1 day streak  ·  best 3');
+    expect(document.getElementById('streakLine')!.textContent)
+      .toBe('1 day streak  ·  best 3  ·  3 days trained total');
+  });
+
+  it('pluralizes correctly for a single trained day', () => {
+    renderStreakLine([row('2026-07-01', 5, 5)]);
+    expect(document.getElementById('streakLine')!.textContent).toContain('1 day trained total');
   });
 });
 
@@ -320,5 +361,39 @@ describe('initChronicle / month navigation', () => {
     // (jest.resetModules() in the top-level beforeEach guarantees a fresh module).
     expect(() => (global as any).shiftMonth(1)).not.toThrow();
     expect(document.getElementById('monthLabel')!.textContent).toBe('');
+  });
+
+  // ── Regression: clampMonthNav must be a range clamp, not an equality check ──
+  // (src/chronicle.ts:135-136 pre-fix). Once the view slips past a bound it
+  // must stay clamped — an exact-month equality check re-enables the arrow
+  // the moment the view is no longer EXACTLY on the boundary month.
+
+  it('keeps nextMonth disabled once the view moves past the current month', () => {
+    const { mockDb } = createSQLiteMock({ rows: [] });
+    (window as any).sqlitePlugin = { openDatabase: jest.fn(() => mockDb) };
+    localStorage.setItem('chronicleStart', '2000-01-01');
+    (global as any).initChronicle();
+    expect((document.getElementById('nextMonth') as HTMLButtonElement).disabled).toBe(true);
+
+    // Simulate a shift slipping past today (e.g. a tap that raced the clamp).
+    (global as any).shiftMonth(1);
+    expect((document.getElementById('nextMonth') as HTMLButtonElement).disabled).toBe(true);
+
+    (global as any).shiftMonth(1);
+    expect((document.getElementById('nextMonth') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('keeps prevMonth disabled once the view moves before chronicleStart', () => {
+    const { mockDb } = createSQLiteMock({ rows: [] });
+    (window as any).sqlitePlugin = { openDatabase: jest.fn(() => mockDb) };
+    localStorage.setItem('chronicleStart', localDayKey(new Date()));
+    (global as any).initChronicle();
+    expect((document.getElementById('prevMonth') as HTMLButtonElement).disabled).toBe(true);
+
+    (global as any).shiftMonth(-1);
+    expect((document.getElementById('prevMonth') as HTMLButtonElement).disabled).toBe(true);
+
+    (global as any).shiftMonth(-1);
+    expect((document.getElementById('prevMonth') as HTMLButtonElement).disabled).toBe(true);
   });
 });

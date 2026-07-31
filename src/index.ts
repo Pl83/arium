@@ -22,6 +22,7 @@ function onDeviceReady(): void {
     // is emptied here, before anything reseeds it.
     if (localStorage.getItem('pendingWipe')) {
       tx.executeSql('DELETE FROM objectives');
+      tx.executeSql('DELETE FROM day_log');
       localStorage.removeItem('pendingWipe');
     }
   }, err => {

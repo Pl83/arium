@@ -54,14 +54,27 @@ function longestStreak(rows: DayRow[]): number {
   return best;
 }
 
+// A day counts as trained when it has completed objectives OR earned Cosmo
+// (a Trial-only day has no objective denominator but is still real training).
+// Shared by monthSummary and trainedDaysTotal so the two rules can never drift
+// apart the way cellState and monthSummary once did.
+function isTrainedDay(r: DayRow): boolean {
+  return r.done > 0 || r.xp > 0;
+}
+
 function monthSummary(rows: DayRow[]): { trained: number; xp: number } {
   let trained = 0;
   let xp = 0;
   for (const r of rows) {
-    if (r.done > 0 || r.xp > 0) trained++;
+    if (isTrainedDay(r)) trained++;
     xp += r.xp;
   }
   return { trained: trained, xp: xp };
+}
+
+// Lifetime count for the summary strip's "days trained total" figure.
+function trainedDaysTotal(rows: DayRow[]): number {
+  return rows.filter(isTrainedDay).length;
 }
 
 let viewYear = 0;
@@ -111,7 +124,8 @@ function renderMonth(rows: DayRow[], year: number, month: number, todayKey: stri
 
   const summary = monthSummary(rows);
   (document.getElementById('monthLine') as HTMLElement).textContent =
-    summary.trained + ' day' + (summary.trained === 1 ? '' : 's') + ' trained this month';
+    summary.trained + ' day' + (summary.trained === 1 ? '' : 's') + ' trained this month' +
+    '  ·  ' + summary.xp + ' Cosmo';
 }
 
 function showDayDetail(key: string, r: DayRow | undefined): void {
@@ -126,14 +140,29 @@ function showDayDetail(key: string, r: DayRow | undefined): void {
   (document.getElementById('dayDetail') as HTMLElement).hidden = false;
 }
 
+// Single ordinal so "before/at/after" is one integer comparison instead of a
+// year+month pair — a month is just its distance in months from year 0.
+function monthOrdinal(year: number, month: number): number {
+  return year * 12 + month;
+}
+
 // Clamped so the arrows never wander into empty centuries. A disabled arrow
 // is left visible — a control that vanishes reads as a bug.
+//
+// Range checks, not equality: the view counts as clamped when it is AT OR
+// BEYOND each bound. An exact-month equality check only holds the line at
+// the boundary month itself — one step past it, the check goes false again
+// and the "disabled" arrow silently re-enables, turning this into an
+// unbounded navigator in that direction.
 function clampMonthNav(todayKey: string): void {
   const startKey = localStorage.getItem('chronicleStart') || todayKey;
   const start = parseDayKey(startKey);
   const today = parseDayKey(todayKey);
-  const atStart = viewYear === start.getFullYear() && viewMonth === start.getMonth() + 1;
-  const atToday = viewYear === today.getFullYear() && viewMonth === today.getMonth() + 1;
+  const view = monthOrdinal(viewYear, viewMonth);
+  const startOrdinal = monthOrdinal(start.getFullYear(), start.getMonth() + 1);
+  const todayOrdinal = monthOrdinal(today.getFullYear(), today.getMonth() + 1);
+  const atStart = view <= startOrdinal;
+  const atToday = view >= todayOrdinal;
   (document.getElementById('prevMonth') as HTMLButtonElement).disabled = atStart;
   (document.getElementById('nextMonth') as HTMLButtonElement).disabled = atToday;
 }
@@ -151,14 +180,19 @@ function shiftMonth(delta: number): void {
   const d = new Date(viewYear, viewMonth - 1 + delta, 1);
   viewYear = d.getFullYear();
   viewMonth = d.getMonth() + 1;
+  // Clamp synchronously, before the (potentially async, on-device) db round
+  // trip in loadMonth() — button state must never lag one tap behind the view.
+  clampMonthNav(localDayKey(new Date()));
   loadMonth();
 }
 
 function renderStreakLine(rows: DayRow[]): void {
   const current = parseInt(localStorage.getItem('streak') || '0', 10);
   const best = Math.max(longestStreak(rows), current);
+  const total = trainedDaysTotal(rows);
   (document.getElementById('streakLine') as HTMLElement).textContent =
-    current + ' day streak  ·  best ' + best;
+    current + ' day streak  ·  best ' + best +
+    '  ·  ' + total + ' day' + (total === 1 ? '' : 's') + ' trained total';
 }
 
 function initChronicle(): void {
@@ -188,16 +222,20 @@ if (typeof module !== 'undefined') {
   global.cellState      = cellState;
   global.monthGrid      = monthGrid;
   global.longestStreak  = longestStreak;
-  global.monthSummary   = monthSummary;
+  global.isTrainedDay      = isTrainedDay;
+  global.monthSummary      = monthSummary;
+  global.trainedDaysTotal  = trainedDaysTotal;
   global.renderMonth       = renderMonth;
   global.showDayDetail     = showDayDetail;
+  global.monthOrdinal      = monthOrdinal;
   global.clampMonthNav     = clampMonthNav;
   global.loadMonth          = loadMonth;
   global.shiftMonth         = shiftMonth;
   global.renderStreakLine   = renderStreakLine;
   global.initChronicle      = initChronicle;
   module.exports = {
-    WEEKDAY_LABELS, MONTH_LABELS, isFullDay, cellState, monthGrid, longestStreak, monthSummary,
-    renderMonth, showDayDetail, clampMonthNav, loadMonth, shiftMonth, renderStreakLine, initChronicle,
+    WEEKDAY_LABELS, MONTH_LABELS, isFullDay, cellState, monthGrid, longestStreak,
+    isTrainedDay, monthSummary, trainedDaysTotal,
+    renderMonth, showDayDetail, monthOrdinal, clampMonthNav, loadMonth, shiftMonth, renderStreakLine, initChronicle,
   };
 }
