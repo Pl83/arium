@@ -35,6 +35,9 @@ beforeEach(() => {
   jest.resetModules();
   // Re-load shared so its globals survive resetModules
   require('../src/shared');
+  // daylog.ts must load before index.ts (mirrors browser script order) —
+  // index.ts calls createDayLogTable at runtime from onDeviceReady.
+  require('../src/daylog');
   // notifications.ts must load before index.ts (mirrors browser script order)
   require('../src/notifications');
   require('../src/index');
@@ -558,5 +561,60 @@ describe('pendingWipe', () => {
     const { mockTx } = createSQLiteMock({ rows: [{ count: 2, id: 1, title: 'Push-Ups [0/20]', completed: 0 }] });
     (global as any).onDeviceReady();
     expect(sqlFor(mockTx).some(s => /DELETE FROM objectives/i.test(s))).toBe(false);
+  });
+});
+
+// ── day_log bootstrap ─────────────────────────────────────────────────────────
+
+describe('day_log bootstrap', () => {
+  it('creates the day_log table on device ready', () => {
+    localStorage.setItem('lastOpened', new Date().toDateString());
+    // title/completed included so the same fallback row also satisfies init()'s
+    // later `SELECT * FROM objectives` render pass without crashing on obj.title.
+    const { mockTx } = createSQLiteMock({ rows: [{ count: 1, total: 1, done: 1, title: 'Push-Ups [0/20]', completed: 0 }] });
+    onDeviceReady();
+    const created = mockTx.executeSql.mock.calls
+      .some((c: any[]) => c[0].indexOf('CREATE TABLE IF NOT EXISTS day_log') !== -1);
+    expect(created).toBe(true);
+  });
+});
+
+// ── lastOpenedISO migration ────────────────────────────────────────────────────
+
+describe('lastOpenedISO migration', () => {
+  it('derives lastOpenedISO from a legacy lastOpened value', () => {
+    localStorage.setItem('lastOpened', 'Wed Jul 29 2026');
+    expect(migrateLastOpenedISO()).toBe('2026-07-29');
+    expect(localStorage.getItem('lastOpenedISO')).toBe('2026-07-29');
+  });
+
+  it('keeps an existing lastOpenedISO rather than re-deriving it', () => {
+    localStorage.setItem('lastOpened', 'Wed Jul 29 2026');
+    localStorage.setItem('lastOpenedISO', '2026-07-20');
+    expect(migrateLastOpenedISO()).toBe('2026-07-20');
+  });
+
+  it('returns null for an unparseable legacy value', () => {
+    localStorage.setItem('lastOpened', 'not a date');
+    expect(migrateLastOpenedISO()).toBeNull();
+    expect(localStorage.getItem('lastOpenedISO')).toBeNull();
+  });
+
+  it('returns null when there is no legacy value at all', () => {
+    expect(migrateLastOpenedISO()).toBeNull();
+  });
+
+  it('writes lastOpenedISO on a first-ever launch', () => {
+    const { mockDb } = createSQLiteMock({ rows: [{ total: 0, done: 0 }] });
+    _setDb(mockDb);
+    handleDailyReset(() => {});
+    expect(localStorage.getItem('lastOpenedISO')).toBe(localDayKey(new Date()));
+  });
+
+  it('leaves lastOpened in its legacy format', () => {
+    const { mockDb } = createSQLiteMock({ rows: [{ total: 0, done: 0 }] });
+    _setDb(mockDb);
+    handleDailyReset(() => {});
+    expect(localStorage.getItem('lastOpened')).toBe(new Date().toDateString());
   });
 });

@@ -16,6 +16,7 @@ function onDeviceReady(): void {
       title TEXT,
       completed INTEGER
     )`);
+    createDayLogTable(tx);
     // Delete Account runs on profile.html, which has no database handle of its
     // own. It clears localStorage and leaves this flag so the objectives table
     // is emptied here, before anything reseeds it.
@@ -68,13 +69,38 @@ function maybeShowNameSetup(callback: () => void): void {
 
 // --- Daily reset ---
 
+// lastOpened holds toDateString() output ("Wed Jul 31 2026"), which neither
+// sorts nor compares. lastOpenedISO carries the same instant in 'YYYY-MM-DD'
+// form for the Chronicle. lastOpened itself is left untouched — other code
+// still reads it.
+function migrateLastOpenedISO(): string | null {
+  const iso = localStorage.getItem('lastOpenedISO');
+  if (iso) return iso;
+  const legacy = localStorage.getItem('lastOpened');
+  if (!legacy) return null;
+  const parsed = new Date(legacy);
+  if (isNaN(parsed.getTime())) return null;
+  const derived = localDayKey(parsed);
+  localStorage.setItem('lastOpenedISO', derived);
+  return derived;
+}
+
 function handleDailyReset(callback: () => void): void {
   const today = new Date().toDateString();
+  const todayKey = localDayKey(new Date());
   const lastOpened = localStorage.getItem('lastOpened');
+  migrateLastOpenedISO();
+
   if (lastOpened !== today) {
     localStorage.setItem('lastOpened', today);
-    checkYesterdayCompletion(() => resetObjectives(callback));
+    // lastOpenedISO is advanced only AFTER the history write, because
+    // recordClosedDays (Task 5) reads it to learn where the gap starts.
+    checkYesterdayCompletion(() => {
+      localStorage.setItem('lastOpenedISO', todayKey);
+      resetObjectives(callback);
+    });
   } else {
+    localStorage.setItem('lastOpenedISO', todayKey);
     callback();
   }
 }
@@ -345,6 +371,7 @@ if (typeof module !== 'undefined') {
   global.onDeviceReady            = onDeviceReady;
   global.maybeShowNameSetup       = maybeShowNameSetup;
   global.handleDailyReset         = handleDailyReset;
+  global.migrateLastOpenedISO     = migrateLastOpenedISO;
   global.checkYesterdayCompletion = checkYesterdayCompletion;
   global.applyStreakAndPenalty    = applyStreakAndPenalty;
   global.showPenaltyModal         = showPenaltyModal;
@@ -356,7 +383,7 @@ if (typeof module !== 'undefined') {
   global.animateBar               = animateBar;
   global.init                     = init;
   module.exports = {
-    onDeviceReady, maybeShowNameSetup, handleDailyReset, checkYesterdayCompletion, applyStreakAndPenalty,
+    onDeviceReady, maybeShowNameSetup, handleDailyReset, migrateLastOpenedISO, checkYesterdayCompletion, applyStreakAndPenalty,
     showPenaltyModal, showRankUpModal, resetObjectives, seedInitialObjectives,
     refreshLevelBar, updateNameTag, animateBar, init,
   };
