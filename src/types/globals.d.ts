@@ -91,6 +91,27 @@ interface PlayerRow {
 declare var SUPABASE_URL:      string;
 declare var SUPABASE_ANON_KEY: string;
 
+// ── Chronicle ──────────────────────────────────────────────────────────────
+
+interface DayRow {
+  day:    string;   // 'YYYY-MM-DD'
+  done:   number;
+  total:  number;
+  xp:     number;
+  streak: number;
+}
+
+// Every field optional: an omitted field leaves the stored value untouched.
+// xpDelta is added to the stored xp, not assigned over it.
+interface DayPatch {
+  xpDelta?: number;
+  done?:    number;
+  total?:   number;
+  streak?:  number;
+}
+
+type CellState = 'full' | 'partial' | 'missed' | 'blank';
+
 // ── Jest interop ───────────────────────────────────────────────────────────
 // Allows `if (typeof module !== 'undefined') { module.exports = ... }`
 // and `global.fn = fn` in global-script files to compile under "module": "none".
