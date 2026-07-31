@@ -1,0 +1,100 @@
+/* ═══════════════════════════════════════════════════════════════════
+   CHRONICLE
+   Month calendar of day_log rows. No :root block, no prefers-color-scheme
+   query here — every colour is a var(--…) declared in theme.css.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.chronicle-card {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 90px;
+}
+
+#streakLine {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+#monthLine {
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.month-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.month-head h2 {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fg);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.weekday-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.day-cell {
+  aspect-ratio: 1;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.day-cell.is-full    { background: var(--gold); color: var(--gold-ink); }
+.day-cell.is-partial { border-color: var(--gold); color: var(--gold); }
+.day-cell.is-missed  { border-color: var(--gold-soft); color: var(--fg-muted); }
+.day-cell.is-blank   { color: var(--fg-dim); cursor: default; }
+.day-cell.is-today   { outline: 2px solid var(--gold); outline-offset: 1px; }
+
+.weekday { color: var(--fg-dim); font-size: 0.7rem; text-align: center; }
+
+.month-nav {
+  background: none;
+  border: none;
+  color: var(--gold);
+  cursor: pointer;
+}
+.month-nav[disabled] { color: var(--fg-dim); cursor: default; }
+
+.day-detail {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#detailDate {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.08em;
+}
+
+#detailBody {
+  font-size: 11px;
+  color: var(--fg-muted);
+}

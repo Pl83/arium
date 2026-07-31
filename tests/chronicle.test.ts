@@ -156,3 +156,169 @@ describe('monthSummary', () => {
     expect(cellState(rows[0], '2026-07-04', '2026-07-01', '2026-07-31')).toBe('partial');
   });
 });
+
+const CHRONICLE_DOM = `
+  <section class="chronicle-card">
+    <p id="streakLine"></p>
+    <p id="monthLine"></p>
+    <div class="month-head">
+      <button id="prevMonth" aria-label="Previous month">◀</button>
+      <h2 id="monthLabel"></h2>
+      <button id="nextMonth" aria-label="Next month">▶</button>
+    </div>
+    <div id="weekdayRow"></div>
+    <div id="monthGrid"></div>
+    <div id="dayDetail" hidden>
+      <h3 id="detailDate"></h3>
+      <p id="detailBody"></p>
+    </div>
+  </section>
+`;
+
+describe('renderMonth', () => {
+  beforeEach(() => { document.body.innerHTML = CHRONICLE_DOM; });
+
+  it('labels the month and year', () => {
+    renderMonth([], 2026, 7, '2026-07-31');
+    expect(document.getElementById('monthLabel')!.textContent).toBe('JULY 2026');
+  });
+
+  it('renders one cell per day plus leading padding', () => {
+    renderMonth([], 2026, 7, '2026-07-31');
+    expect(document.querySelectorAll('#monthGrid .day-cell').length).toBe(31);
+    expect(document.querySelectorAll('#monthGrid .day-pad').length).toBe(2);
+  });
+
+  it('applies the state class to each cell', () => {
+    localStorage.setItem('chronicleStart', '2026-07-01');
+    renderMonth([row('2026-07-01', 5, 5), row('2026-07-02', 2, 5)], 2026, 7, '2026-07-31');
+    const cells = document.querySelectorAll('#monthGrid .day-cell');
+    expect(cells[0].classList.contains('is-full')).toBe(true);
+    expect(cells[1].classList.contains('is-partial')).toBe(true);
+    expect(cells[2].classList.contains('is-missed')).toBe(true);
+  });
+
+  it('marks today', () => {
+    localStorage.setItem('chronicleStart', '2026-07-01');
+    renderMonth([], 2026, 7, '2026-07-15');
+    const today = document.querySelector('#monthGrid .is-today');
+    expect(today!.textContent).toBe('15');
+  });
+
+  it('renders an empty day_log without throwing', () => {
+    expect(() => renderMonth([], 2026, 7, '2026-07-31')).not.toThrow();
+  });
+
+  it('shows a day\'s detail when its cell is clicked', () => {
+    localStorage.setItem('chronicleStart', '2026-07-01');
+    renderMonth([row('2026-07-01', 5, 5, 125)], 2026, 7, '2026-07-31');
+    (document.querySelector('#monthGrid .day-cell') as HTMLElement).click();
+    expect(document.getElementById('dayDetail')!.hasAttribute('hidden')).toBe(false);
+    expect(document.getElementById('detailBody')!.textContent).toContain('5/5');
+    expect(document.getElementById('detailBody')!.textContent).toContain('125');
+  });
+
+  it('does not open detail for a blank cell', () => {
+    localStorage.setItem('chronicleStart', '2026-07-10');
+    renderMonth([], 2026, 7, '2026-07-31');
+    (document.querySelector('#monthGrid .day-cell') as HTMLElement).click();
+    expect(document.getElementById('dayDetail')!.hasAttribute('hidden')).toBe(true);
+  });
+
+  it('shows a zeroed detail for a missed day with no row at all', () => {
+    localStorage.setItem('chronicleStart', '2026-07-01');
+    renderMonth([], 2026, 7, '2026-07-31');
+    (document.querySelector('#monthGrid .day-cell.is-missed') as HTMLElement).click();
+    expect(document.getElementById('dayDetail')!.hasAttribute('hidden')).toBe(false);
+    expect(document.getElementById('detailBody')!.textContent).toBe('0/0 ordeals  ·  +0 Cosmo');
+  });
+});
+
+describe('renderStreakLine', () => {
+  beforeEach(() => { document.body.innerHTML = CHRONICLE_DOM; });
+
+  it('shows the current streak and the best of current/longest', () => {
+    localStorage.setItem('streak', '3');
+    renderStreakLine([row('2026-07-01', 5, 5), row('2026-07-02', 5, 5)]);
+    expect(document.getElementById('streakLine')!.textContent).toBe('3 day streak  ·  best 3');
+  });
+
+  it('defaults the current streak to 0 when unset', () => {
+    renderStreakLine([]);
+    expect(document.getElementById('streakLine')!.textContent).toBe('0 day streak  ·  best 0');
+  });
+
+  it('reports the longest streak in history when it exceeds the current one', () => {
+    localStorage.setItem('streak', '1');
+    renderStreakLine([
+      row('2026-07-01', 5, 5), row('2026-07-02', 5, 5), row('2026-07-03', 5, 5),
+    ]);
+    expect(document.getElementById('streakLine')!.textContent).toBe('1 day streak  ·  best 3');
+  });
+});
+
+describe('initChronicle / month navigation', () => {
+  beforeEach(() => { document.body.innerHTML = CHRONICLE_DOM; });
+
+  it('does nothing when the sqlite plugin is absent', () => {
+    delete (window as any).sqlitePlugin;
+    expect(() => (global as any).initChronicle()).not.toThrow();
+    expect(document.getElementById('monthLabel')!.textContent).toBe('');
+  });
+
+  it('opens the db, renders the current month grid and the streak line', () => {
+    const now = new Date();
+    const expectedLabel = MONTH_LABELS[now.getMonth()] + ' ' + now.getFullYear();
+    const { mockDb } = createSQLiteMock({ rows: [] });
+    (window as any).sqlitePlugin = { openDatabase: jest.fn(() => mockDb) };
+    localStorage.setItem('streak', '2');
+    (global as any).initChronicle();
+    expect((window as any).sqlitePlugin.openDatabase).toHaveBeenCalled();
+    expect(mockDb.transaction).toHaveBeenCalled();
+    expect(document.getElementById('monthLabel')!.textContent).toBe(expectedLabel);
+    expect(document.getElementById('streakLine')!.textContent).toContain('2 day streak');
+  });
+
+  it('navigates to the previous and back to the current month via the nav buttons', () => {
+    const { mockDb } = createSQLiteMock({ rows: [] });
+    (window as any).sqlitePlugin = { openDatabase: jest.fn(() => mockDb) };
+    localStorage.setItem('chronicleStart', '2000-01-01');
+    (global as any).initChronicle();
+    // At the current month: nextMonth is clamped, prevMonth is open (start is far in the past).
+    expect((document.getElementById('prevMonth') as HTMLButtonElement).disabled).toBe(false);
+    expect((document.getElementById('nextMonth') as HTMLButtonElement).disabled).toBe(true);
+
+    const currentLabel = document.getElementById('monthLabel')!.textContent;
+    (document.getElementById('prevMonth') as HTMLElement).click();
+    expect(document.getElementById('monthLabel')!.textContent).not.toBe(currentLabel);
+    // Having stepped back, we are no longer at today: nextMonth re-enables.
+    expect((document.getElementById('nextMonth') as HTMLButtonElement).disabled).toBe(false);
+
+    (document.getElementById('nextMonth') as HTMLElement).click();
+    expect(document.getElementById('monthLabel')!.textContent).toBe(currentLabel);
+  });
+
+  it('disables prevMonth at chronicleStart and nextMonth at the current month', () => {
+    const { mockDb } = createSQLiteMock({ rows: [] });
+    (window as any).sqlitePlugin = { openDatabase: jest.fn(() => mockDb) };
+    localStorage.setItem('chronicleStart', localDayKey(new Date()));
+    (global as any).initChronicle();
+    expect((document.getElementById('prevMonth') as HTMLButtonElement).disabled).toBe(true);
+    expect((document.getElementById('nextMonth') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('falls back to today as the clamp start when chronicleStart is unset', () => {
+    const { mockDb } = createSQLiteMock({ rows: [] });
+    (window as any).sqlitePlugin = { openDatabase: jest.fn(() => mockDb) };
+    (global as any).initChronicle();
+    expect((document.getElementById('prevMonth') as HTMLButtonElement).disabled).toBe(true);
+    expect((document.getElementById('nextMonth') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('does nothing when shiftMonth is called before the db has ever been opened', () => {
+    // No initChronicle() in this test — chronicleDb is still null module-wide
+    // (jest.resetModules() in the top-level beforeEach guarantees a fresh module).
+    expect(() => (global as any).shiftMonth(1)).not.toThrow();
+    expect(document.getElementById('monthLabel')!.textContent).toBe('');
+  });
+});

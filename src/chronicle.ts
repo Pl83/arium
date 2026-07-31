@@ -64,6 +64,121 @@ function monthSummary(rows: DayRow[]): { trained: number; xp: number } {
   return { trained: trained, xp: xp };
 }
 
+let viewYear = 0;
+let viewMonth = 0;   // 1-12
+let chronicleDb: SQLiteDatabase | null = null;
+
+function renderMonth(rows: DayRow[], year: number, month: number, todayKey: string): void {
+  const byDay: Record<string, DayRow> = {};
+  rows.forEach(r => { byDay[r.day] = r; });
+  const startKey = localStorage.getItem('chronicleStart');
+
+  (document.getElementById('monthLabel') as HTMLElement).textContent =
+    MONTH_LABELS[month - 1] + ' ' + year;
+
+  const weekdayRow = document.getElementById('weekdayRow') as HTMLElement;
+  weekdayRow.innerHTML = '';
+  WEEKDAY_LABELS.forEach(l => {
+    const s = document.createElement('span');
+    s.className = 'weekday';
+    s.textContent = l;
+    weekdayRow.appendChild(s);
+  });
+
+  const grid = document.getElementById('monthGrid') as HTMLElement;
+  grid.innerHTML = '';
+  const detail = document.getElementById('dayDetail') as HTMLElement;
+  detail.hidden = true;
+
+  monthGrid(year, month).forEach(key => {
+    if (key === null) {
+      const pad = document.createElement('span');
+      pad.className = 'day-pad';
+      grid.appendChild(pad);
+      return;
+    }
+    const state = cellState(byDay[key], key, startKey, todayKey);
+    const cell = document.createElement('button');
+    cell.type = 'button';
+    cell.className = 'day-cell is-' + state;
+    if (key === todayKey) cell.classList.add('is-today');
+    cell.textContent = String(parseDayKey(key).getDate());
+    if (state !== 'blank') {
+      cell.addEventListener('click', () => showDayDetail(key, byDay[key]));
+    }
+    grid.appendChild(cell);
+  });
+
+  const summary = monthSummary(rows);
+  (document.getElementById('monthLine') as HTMLElement).textContent =
+    summary.trained + ' day' + (summary.trained === 1 ? '' : 's') + ' trained this month';
+}
+
+function showDayDetail(key: string, r: DayRow | undefined): void {
+  const d = parseDayKey(key);
+  (document.getElementById('detailDate') as HTMLElement).textContent =
+    d.toDateString().toUpperCase();
+  const done = r ? r.done : 0;
+  const total = r ? r.total : 0;
+  const xp = r ? r.xp : 0;
+  (document.getElementById('detailBody') as HTMLElement).textContent =
+    done + '/' + total + ' ordeals  ·  +' + xp + ' Cosmo';
+  (document.getElementById('dayDetail') as HTMLElement).hidden = false;
+}
+
+// Clamped so the arrows never wander into empty centuries. A disabled arrow
+// is left visible — a control that vanishes reads as a bug.
+function clampMonthNav(todayKey: string): void {
+  const startKey = localStorage.getItem('chronicleStart') || todayKey;
+  const start = parseDayKey(startKey);
+  const today = parseDayKey(todayKey);
+  const atStart = viewYear === start.getFullYear() && viewMonth === start.getMonth() + 1;
+  const atToday = viewYear === today.getFullYear() && viewMonth === today.getMonth() + 1;
+  (document.getElementById('prevMonth') as HTMLButtonElement).disabled = atStart;
+  (document.getElementById('nextMonth') as HTMLButtonElement).disabled = atToday;
+}
+
+function loadMonth(): void {
+  if (!chronicleDb) return;
+  const todayKey = localDayKey(new Date());
+  readMonth(chronicleDb, viewYear, viewMonth, rows => {
+    renderMonth(rows, viewYear, viewMonth, todayKey);
+    clampMonthNav(todayKey);
+  });
+}
+
+function shiftMonth(delta: number): void {
+  const d = new Date(viewYear, viewMonth - 1 + delta, 1);
+  viewYear = d.getFullYear();
+  viewMonth = d.getMonth() + 1;
+  loadMonth();
+}
+
+function renderStreakLine(rows: DayRow[]): void {
+  const current = parseInt(localStorage.getItem('streak') || '0', 10);
+  const best = Math.max(longestStreak(rows), current);
+  (document.getElementById('streakLine') as HTMLElement).textContent =
+    current + ' day streak  ·  best ' + best;
+}
+
+function initChronicle(): void {
+  if (!window.sqlitePlugin) return;
+  chronicleDb = window.sqlitePlugin.openDatabase({ name: 'fitness.db', location: 'default' });
+  chronicleDb.transaction(tx => createDayLogTable(tx));
+
+  const now = new Date();
+  viewYear = now.getFullYear();
+  viewMonth = now.getMonth() + 1;
+
+  document.getElementById('prevMonth')!.addEventListener('click', () => shiftMonth(-1));
+  document.getElementById('nextMonth')!.addEventListener('click', () => shiftMonth(1));
+
+  readAll(chronicleDb, rows => renderStreakLine(rows));
+  loadMonth();
+}
+
+document.addEventListener('deviceready', initChronicle, false);
+
 // === NODE/JEST EXPORT — invisible in browser ===
 /* istanbul ignore else */
 if (typeof module !== 'undefined') {
@@ -74,7 +189,15 @@ if (typeof module !== 'undefined') {
   global.monthGrid      = monthGrid;
   global.longestStreak  = longestStreak;
   global.monthSummary   = monthSummary;
+  global.renderMonth       = renderMonth;
+  global.showDayDetail     = showDayDetail;
+  global.clampMonthNav     = clampMonthNav;
+  global.loadMonth          = loadMonth;
+  global.shiftMonth         = shiftMonth;
+  global.renderStreakLine   = renderStreakLine;
+  global.initChronicle      = initChronicle;
   module.exports = {
     WEEKDAY_LABELS, MONTH_LABELS, isFullDay, cellState, monthGrid, longestStreak, monthSummary,
+    renderMonth, showDayDetail, clampMonthNav, loadMonth, shiftMonth, renderStreakLine, initChronicle,
   };
 }
