@@ -15,6 +15,7 @@ module.exports = {
     'src/notifications.ts',
     'src/supabase.ts',
     'src/rankings.ts',
+    'src/chronicle.ts',
   ],
   coverageReporters: ['text', 'lcov', 'html'],
   coverageDirectory: 'coverage',
