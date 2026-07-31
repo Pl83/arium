@@ -1,6 +1,8 @@
 // shared.ts is already on global via setup.ts
+require('../src/daylog');
 const trialModule = require('../src/trial');
 const { getS, setS } = trialModule;
+const { createSQLiteMock } = require('./helpers/sqlite-mock');
 
 const PUSHUP_EX      = (global as any).SOLO_EXERCISES[0]; // Push-Ups, cfgIdx:0, reps
 const PLANK_EX       = (global as any).SOLO_EXERCISES[3]; // Plank, cfgIdx:3, time
@@ -695,5 +697,64 @@ describe('showChallengeComplete', () => {
     });
     trialModule.showChallengeComplete();
     expect(document.querySelector('.set-indicator').textContent).toContain('1 round');
+  });
+});
+
+// ── Chronicle recording ──────────────────────────────────────────────────────
+
+describe('Chronicle recording', () => {
+  const SOLO_STATE = (setsCompleted: number) => ({
+    mode: 'solo' as const,
+    ex: { name: 'Push-Ups', type: 'reps' as const, stat: 'strength' as const, step: 1, min: 1 },
+    sets: setsCompleted, target: 20, currentSet: setsCompleted,
+    setsCompleted: setsCompleted, reps: 0, timeLeft: 0,
+  });
+
+  it('records solo trial Cosmo against today', () => {
+    const { mockDb, mockTx } = createSQLiteMock({ responses: { 'SELECT * FROM day_log': [] } });
+    (window as any).sqlitePlugin = { openDatabase: jest.fn(() => mockDb) };
+    trialModule.openTrialDb();
+    trialModule.setS(SOLO_STATE(2));
+    trialModule.showComplete();
+    const write = mockTx.executeSql.mock.calls
+      .find((c: any[]) => c[0].indexOf('INSERT OR REPLACE INTO day_log') !== -1);
+    expect(write[1][0]).toBe(localDayKey(new Date()));
+    expect(write[1][3]).toBeGreaterThan(0);
+  });
+
+  it('leaves done and total untouched for a trial-only day', () => {
+    const { mockDb, mockTx } = createSQLiteMock({ responses: { 'SELECT * FROM day_log': [] } });
+    (window as any).sqlitePlugin = { openDatabase: jest.fn(() => mockDb) };
+    trialModule.openTrialDb();
+    trialModule.setS(SOLO_STATE(1));
+    trialModule.showComplete();
+    const write = mockTx.executeSql.mock.calls
+      .find((c: any[]) => c[0].indexOf('INSERT OR REPLACE INTO day_log') !== -1);
+    expect(write[1][1]).toBe(0); // done
+    expect(write[1][2]).toBe(0); // total
+  });
+
+  it('adds to an existing row rather than creating a second one', () => {
+    const todayKey = localDayKey(new Date());
+    const existing = [{ day: todayKey, done: 3, total: 5, xp: 75, streak: 0 }];
+    const { mockDb, mockTx } = createSQLiteMock({ responses: { 'SELECT * FROM day_log': existing } });
+    (window as any).sqlitePlugin = { openDatabase: jest.fn(() => mockDb) };
+    trialModule.openTrialDb();
+    trialModule.setS(SOLO_STATE(1));
+    trialModule.showComplete();
+    const writes = mockTx.executeSql.mock.calls
+      .filter((c: any[]) => c[0].indexOf('INSERT OR REPLACE INTO day_log') !== -1);
+    expect(writes.length).toBe(1);
+    expect(writes[0][1][0]).toBe(todayKey);
+    expect(writes[0][1][1]).toBe(3);   // done preserved
+    expect(writes[0][1][2]).toBe(5);   // total preserved
+    expect(writes[0][1][3]).toBeGreaterThan(75); // xp accumulated
+  });
+
+  it('does not throw when the SQLite plugin is absent', () => {
+    delete (window as any).sqlitePlugin;
+    expect(() => trialModule.openTrialDb()).not.toThrow();
+    trialModule.setS(SOLO_STATE(1));
+    expect(() => trialModule.showComplete()).not.toThrow();
   });
 });
