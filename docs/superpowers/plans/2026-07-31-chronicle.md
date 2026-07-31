@@ -84,7 +84,9 @@ describe('parseDayKey', () => {
   });
 
   it('round-trips with localDayKey', () => {
-    expect(localDayKey(parseDayKey('2026-02-29'))).toBe('2026-02-29');
+    // 2024, not 2026 — 2026 is not a leap year, so 2026-02-29 does not exist
+    // and new Date(2026, 1, 29) rolls over to 1 March.
+    expect(localDayKey(parseDayKey('2024-02-29'))).toBe('2024-02-29');
   });
 });
 
@@ -126,8 +128,10 @@ Add to `src/shared.ts`, immediately before the `// === NODE/JEST EXPORT` comment
 // files a 23:30 session under tomorrow for anyone east of Greenwich.
 
 function localDayKey(d: Date): string {
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+  // ('0' + n).slice(-2), not padStart — padStart is ES2017 and tsconfig
+  // declares lib: ["ES6", "DOM", "DOM.Iterable"], so it does not compile here.
+  const m   = ('0' + (d.getMonth() + 1)).slice(-2);
+  const day = ('0' + d.getDate()).slice(-2);
   return d.getFullYear() + '-' + m + '-' + day;
 }
 
