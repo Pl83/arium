@@ -618,3 +618,105 @@ describe('lastOpenedISO migration', () => {
     expect(localStorage.getItem('lastOpened')).toBe(new Date().toDateString());
   });
 });
+
+// ── history on daily reset ────────────────────────────────────────────────────
+
+describe('history on daily reset', () => {
+  it('finalizes yesterday from the live objectives counts', () => {
+    localStorage.setItem('lastOpened', 'old');
+    localStorage.setItem('lastOpenedISO', dayKeyAddDays(localDayKey(new Date()), -1));
+    localStorage.setItem('streak', '4');
+    const { mockDb, mockTx } = createSQLiteMock({
+      responses: { 'as total': [{ total: 5 }], 'as done': [{ done: 5 }], 'SELECT * FROM day_log': [] },
+    });
+    _setDb(mockDb);
+    handleDailyReset(() => {});
+    const yesterday = dayKeyAddDays(localDayKey(new Date()), -1);
+    const write = mockTx.executeSql.mock.calls
+      .find((c: any[]) => c[0].indexOf('INSERT OR REPLACE INTO day_log') !== -1);
+    expect(write[1][0]).toBe(yesterday);
+    expect(write[1][1]).toBe(5);  // done
+    expect(write[1][2]).toBe(5);  // total
+  });
+
+  it('backfills the days of a multi-day absence', () => {
+    const todayKey = localDayKey(new Date());
+    localStorage.setItem('lastOpened', 'old');
+    localStorage.setItem('lastOpenedISO', dayKeyAddDays(todayKey, -4));
+    const { mockDb, mockTx } = createSQLiteMock({
+      responses: { 'as total': [{ total: 5 }], 'as done': [{ done: 0 }], 'SELECT * FROM day_log': [] },
+    });
+    _setDb(mockDb);
+    handleDailyReset(() => {});
+    const filled = mockTx.executeSql.mock.calls
+      .filter((c: any[]) => c[0].indexOf('INSERT OR IGNORE INTO day_log') !== -1)
+      .map((c: any[]) => c[1][0]);
+    expect(filled).toEqual([
+      dayKeyAddDays(todayKey, -3),
+      dayKeyAddDays(todayKey, -2),
+      dayKeyAddDays(todayKey, -1),
+    ]);
+  });
+
+  it('deducts exactly one day of penalty however long the absence', () => {
+    localStorage.setItem('lastOpened', 'old');
+    localStorage.setItem('lastOpenedISO', dayKeyAddDays(localDayKey(new Date()), -10));
+    localStorage.setItem('totalXP', '1000');
+    const { mockDb } = createSQLiteMock({
+      responses: { 'as total': [{ total: 5 }], 'as done': [{ done: 0 }], 'SELECT * FROM day_log': [] },
+    });
+    _setDb(mockDb);
+    handleDailyReset(() => {});
+    // 5 missed × 15 = 75, once — not once per absent day
+    expect(localStorage.getItem('totalXP')).toBe('925');
+  });
+
+  it('writes no history when there are no objectives yet', () => {
+    localStorage.setItem('lastOpened', 'old');
+    const { mockDb, mockTx } = createSQLiteMock({
+      responses: { 'as total': [{ total: 0 }], 'as done': [{ done: 0 }] },
+    });
+    _setDb(mockDb);
+    handleDailyReset(() => {});
+    const wrote = mockTx.executeSql.mock.calls
+      .some((c: any[]) => c[0].indexOf('INTO day_log') !== -1);
+    expect(wrote).toBe(false);
+  });
+
+  it('pins chronicleStart to the closed day, not today or yesterday, after a multi-day gap', () => {
+    const todayKey = localDayKey(new Date());
+    const lastKey = dayKeyAddDays(todayKey, -4);
+    localStorage.setItem('lastOpened', 'old');
+    localStorage.setItem('lastOpenedISO', lastKey);
+    const { mockDb } = createSQLiteMock({
+      responses: { 'as total': [{ total: 5 }], 'as done': [{ done: 0 }], 'SELECT * FROM day_log': [] },
+    });
+    _setDb(mockDb);
+    handleDailyReset(() => {});
+    expect(localStorage.getItem('chronicleStart')).toBe(lastKey);
+    expect(localStorage.getItem('chronicleStart')).not.toBe(todayKey);
+    expect(localStorage.getItem('chronicleStart')).not.toBe(dayKeyAddDays(todayKey, -1));
+  });
+});
+
+// ── recordClosedDays guard clauses ────────────────────────────────────────────
+// Direct calls exercise branches handleDailyReset never reaches (it only ever
+// invokes checkYesterdayCompletion — and so recordClosedDays — with a real
+// lastOpenedISO strictly before today).
+
+describe('recordClosedDays guard clauses', () => {
+  it('writes nothing when lastOpenedISO is missing, even with objectives present', () => {
+    const { mockDb, mockTx } = createSQLiteMock({ rows: [] });
+    _setDb(mockDb);
+    (global as any).recordClosedDays(5, 3);
+    expect(mockTx.executeSql).not.toHaveBeenCalled();
+  });
+
+  it('writes nothing when lastOpenedISO is already today', () => {
+    localStorage.setItem('lastOpenedISO', localDayKey(new Date()));
+    const { mockDb, mockTx } = createSQLiteMock({ rows: [] });
+    _setDb(mockDb);
+    (global as any).recordClosedDays(5, 3);
+    expect(mockTx.executeSql).not.toHaveBeenCalled();
+  });
+});

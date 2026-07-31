@@ -110,7 +110,9 @@ function checkYesterdayCompletion(next: () => void): void {
     tx.executeSql('SELECT COUNT(*) as total FROM objectives', [], (tx, res) => {
       const total = (res.rows.item(0) as { total: number }).total;
       tx.executeSql('SELECT COUNT(*) as done FROM objectives WHERE completed = 1', [], (_tx, res2) => {
-        applyStreakAndPenalty(total, (res2.rows.item(0) as { done: number }).done);
+        const done = (res2.rows.item(0) as { done: number }).done;
+        recordClosedDays(total, done);
+        applyStreakAndPenalty(total, done);
       });
     });
   }, err => {
@@ -119,6 +121,25 @@ function checkYesterdayCompletion(next: () => void): void {
   }, () => {
     next();
   });
+}
+
+// Writes the day just ended, then fills the days the app never saw.
+// Reads lastOpenedISO itself rather than taking it as a parameter, which
+// keeps checkYesterdayCompletion's arity unchanged for existing callers.
+// Deliberately separate from applyStreakAndPenalty: the record is written
+// here, the punishment is decided there, and adding history must not change
+// any player's Cosmo by a single point.
+function recordClosedDays(total: number, done: number): void {
+  const lastKey = localStorage.getItem('lastOpenedISO');
+  if (total === 0 || !lastKey) return;
+  const todayKey = localDayKey(new Date());
+  if (lastKey >= todayKey) return;
+
+  const streak = parseInt(localStorage.getItem('streak') || '0', 10);
+  const closingStreak = done === total ? streak + 1 : 0;
+
+  finalizeDay(db, lastKey, done, total, closingStreak);
+  backfillGap(db, lastKey, todayKey, total);
 }
 
 function applyStreakAndPenalty(total: number, done: number): void {
@@ -373,6 +394,7 @@ if (typeof module !== 'undefined') {
   global.handleDailyReset         = handleDailyReset;
   global.migrateLastOpenedISO     = migrateLastOpenedISO;
   global.checkYesterdayCompletion = checkYesterdayCompletion;
+  global.recordClosedDays         = recordClosedDays;
   global.applyStreakAndPenalty    = applyStreakAndPenalty;
   global.showPenaltyModal         = showPenaltyModal;
   global.showRankUpModal          = showRankUpModal;
@@ -383,7 +405,7 @@ if (typeof module !== 'undefined') {
   global.animateBar               = animateBar;
   global.init                     = init;
   module.exports = {
-    onDeviceReady, maybeShowNameSetup, handleDailyReset, migrateLastOpenedISO, checkYesterdayCompletion, applyStreakAndPenalty,
+    onDeviceReady, maybeShowNameSetup, handleDailyReset, migrateLastOpenedISO, checkYesterdayCompletion, recordClosedDays, applyStreakAndPenalty,
     showPenaltyModal, showRankUpModal, resetObjectives, seedInitialObjectives,
     refreshLevelBar, updateNameTag, animateBar, init,
   };
