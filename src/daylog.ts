@@ -73,19 +73,29 @@ function backfillGap(
   db: SQLiteDatabase, fromKey: string, toKey: string, total: number, cb?: () => void
 ): void {
   const days: string[] = [];
-  let cur = dayKeyAddDays(fromKey, 1);
-  while (cur < toKey && days.length < MAX_BACKFILL_DAYS) {
+  // Walk BACKWARD from the day before toKey. When the cap trips on an absurd
+  // gap — a device clock jump of years — the days kept are then the RECENT
+  // ones. Walking forward would retain the oldest 366 days and silently drop
+  // everything the player might actually care about.
+  let cur = dayKeyAddDays(toKey, -1);
+  while (cur > fromKey && days.length < MAX_BACKFILL_DAYS) {
     days.push(cur);
-    cur = dayKeyAddDays(cur, 1);
+    cur = dayKeyAddDays(cur, -1);
   }
+  days.reverse();   // restore ascending order for the inserts
   if (days.length === 0) {
     if (cb) cb();
     return;
   }
   db.transaction(tx => {
     days.forEach(d => {
+      // VALUES (?, 0, ?, 0, 0) — the second placeholder is the THIRD column.
+      // (?, ?, 0, 0, 0) would bind `total` into `done` and store 5/0 for a day
+      // the player never opened. It still renders as "missed", so the error
+      // is invisible; and INSERT OR IGNORE means a later release cannot
+      // repair it.
       tx.executeSql(
-        'INSERT OR IGNORE INTO day_log (day, done, total, xp, streak) VALUES (?, ?, 0, 0, 0)',
+        'INSERT OR IGNORE INTO day_log (day, done, total, xp, streak) VALUES (?, 0, ?, 0, 0)',
         [d, total]
       );
     });

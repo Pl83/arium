@@ -134,9 +134,24 @@ describe('backfillGap', () => {
     expect(mockTx.executeSql.mock.calls.length).toBe(366);
   });
 
-  it('stores the given total on every backfilled day', () => {
+  it('keeps the most recent days when the cap trips', () => {
+    const { mockDb, mockTx } = createSQLiteMock();
+    backfillGap(mockDb, '2020-01-01', '2026-07-31', 5);
+    const days = mockTx.executeSql.mock.calls
+      .filter((c: any[]) => c[0].indexOf('INSERT OR IGNORE') !== -1)
+      .map((c: any[]) => c[1][0]);
+    expect(days.length).toBe(366);
+    // The day before toKey must be present; the ancient end is what gets dropped.
+    expect(days[days.length - 1]).toBe('2026-07-30');
+  });
+
+  it('binds the given total to the total column, not done', () => {
     const { mockDb, mockTx } = createSQLiteMock();
     backfillGap(mockDb, '2026-07-28', '2026-07-31', 5);
+    // Asserting the bind array ALONE is worthless here: ['2026-07-29', 5] is
+    // identical whether the 5 lands in `done` or in `total`. The SQL text is
+    // what pins the column mapping.
+    expect(mockTx.executeSql.mock.calls[0][0]).toContain('VALUES (?, 0, ?, 0, 0)');
     expect(mockTx.executeSql.mock.calls[0][1]).toEqual(['2026-07-29', 5]);
   });
 
