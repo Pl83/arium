@@ -1,4 +1,4 @@
-# Arium
+# Ironvow
 
 A gamified fitness mobile app built with Apache Cordova. Fitness as an RPG — complete daily objectives, earn XP, level up, and maintain your streak.
 
@@ -70,7 +70,7 @@ www/
     trial.css
     profile.css
   img/              # SVG icons + logo
-config.xml          # Cordova app config (id: com.arium.app, v1.0.0)
+config.xml          # Cordova app config (id: com.ironvow.app, v1.1.0)
 ```
 
 ## Author

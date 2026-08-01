@@ -1,6 +1,6 @@
-# Arium — Google Play Store Release Readiness
+# Ironvow — Google Play Store Release Readiness
 
-**Goal:** ship Arium on Google Play. Free. No ads. No transactions. No in-app purchases.
+**Goal:** ship Ironvow on Google Play. Free. No ads. No transactions. No in-app purchases.
 
 **Status as of 2026-07-31:** not submittable. Five hard blockers, four defects worth
 fixing first, and one administrative requirement that takes **14 calendar days** and
@@ -8,6 +8,27 @@ cannot be shortened.
 
 Everything below was verified against the working tree on `develop`, not from memory.
 Where I did not verify something, it says so.
+
+---
+
+## App identity — settled 2026-08-01
+
+The app was renamed from **Arium** to **Ironvow**. The old name was semantically
+empty (`-arium` is a container suffix) and collided with existing brands.
+
+| Field | Value |
+|-------|-------|
+| Display name | `Ironvow` |
+| Package id | `com.ironvow.app` |
+| Play title | `Ironvow` (7 of 30 chars) |
+
+**The package id is permanent from the moment of first publish.** Play has no
+rename path for `applicationId` — a change after launch means a new listing with
+zero installs and zero reviews. It is now correct in `config.xml:2`; do not touch
+it again.
+
+Still open: trademark search (INPI/EUIPO), Play Store name search, and the domain
+for the privacy-policy host in §1.2. Do these before the first upload, not after.
 
 ---
 
@@ -49,9 +70,9 @@ is yours to protect. Back it up before you use it.
 ### 1.2 No privacy policy URL
 
 Play Console requires a privacy policy URL for **every** app, whether or not it collects
-data. Arium does collect data, so the policy must be accurate, not boilerplate.
+data. Ironvow does collect data, so the policy must be accurate, not boilerplate.
 
-What Arium actually transmits — verified in `src/supabase.ts:11-21` and
+What Ironvow actually transmits — verified in `src/supabase.ts:11-21` and
 `src/rankings.ts:100-106`:
 
 | Field | Source | Sent where |
@@ -92,14 +113,14 @@ Points that need a deliberate answer:
 ### 1.4 User-generated content with no reporting mechanism — **highest rejection risk**
 
 `player_name` is free text (max 20 chars) and is rendered to **every user** of the app
-on the rankings page — `src/rankings.ts:57`. That makes Arium a UGC host under Google's
+on the rankings page — `src/rankings.ts:57`. That makes Ironvow a UGC host under Google's
 User Generated Content policy, which requires:
 
 1. An **in-app mechanism to report** objectionable content
 2. A means to **block abusive users** from the reporting user's view
 3. A stated moderation process, and actual moderation
 
-Arium has none of the three. The name filter that does exist is a character whitelist
+Ironvow has none of the three. The name filter that does exist is a character whitelist
 (`src/profil.ts:215`), which stops nothing — it permits any slur spelled with letters.
 
 This is the single most likely cause of rejection, and it is the largest piece of work
@@ -207,10 +228,10 @@ SDK as a blocker. It was wrong.)*
 
 I could not settle these from the code alone. Each needs a decision or a lookup.
 
-### 3.1 Does Arium count as an app with "accounts"?
+### 3.1 Does Ironvow count as an app with "accounts"?
 
 Google requires apps that support **account creation** to offer in-app account deletion
-*and* a **web-accessible deletion URL**. Arium has no login — identity is a generated
+*and* a **web-accessible deletion URL**. Ironvow has no login — identity is a generated
 `device_id`. That is arguably not an account.
 
 But the profile page literally says "Delete Account", and a server row keyed to a
@@ -222,7 +243,7 @@ and removes an entire category of rejection.
 ### 3.2 Health app declaration
 
 Play has a Health Apps declaration and specific policies for the Health & Fitness
-category. Arium tracks exercise but makes no medical claim, offers no diagnosis, and
+category. Ironvow tracks exercise but makes no medical claim, offers no diagnosis, and
 handles no health records. It should be out of scope, but confirm the current form
 wording at submission time — this policy area changes often.
 
@@ -240,7 +261,7 @@ Recorded so they are decisions rather than oversights.
 
 - **No account system, no backup, no export.** All progress lives in device-local
   SQLite and `localStorage`. Uninstall the app, or lose the phone, and everything is
-  gone — including the entire Chronicle history. This is Arium's most serious product
+  gone — including the entire Chronicle history. This is Ironvow's most serious product
   weakness, but it is not a Play Store blocker and it is a separate campaign.
 - **No crash reporting.** You will not know when the app breaks in the field.
 - **`README.md` is stale** — it describes 4 objectives (there are 5), and it documents
