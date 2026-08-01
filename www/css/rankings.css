@@ -191,3 +191,135 @@ main {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+
+/* ── Reporting ────────────────────────────────────────────────────────────
+   Holding a row that is not your own opens the report sheet. The hold must not
+   also start a text selection or raise the Android selection popup. */
+
+.leaderboard-row.reportable {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+.leaderboard-row.reportable:active {
+  background: var(--gold-faint);
+}
+
+.report-hint {
+  margin: 14px 0 0;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--fg-dim);
+  letter-spacing: 0.04em;
+}
+
+.report-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--scrim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.report-card {
+  width: 100%;
+  max-width: 340px;
+  padding: 22px 20px;
+  background: var(--panel-bg);
+  box-shadow: var(--panel-glow);
+  border: 1px solid var(--gold-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.report-card h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-align: center;
+}
+
+.report-target {
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--fg);
+  overflow-wrap: anywhere;
+}
+
+.report-note {
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fg-muted);
+}
+
+.report-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.report-actions button {
+  flex: 1;
+  padding: 11px 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid var(--gold-soft);
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.report-confirm {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* ── Hidden-players footer ────────────────────────────────────────────────
+   The only route back from a mistaken report, so it is shown whenever anything
+   is blocked — not only when a blocked player is currently on the board. */
+
+.blocked-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+  min-height: 0;
+}
+
+.blocked-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--fg-dim);
+}
+
+.blocked-reset {
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--gold-soft);
+  color: var(--gold);
+  cursor: pointer;
+}

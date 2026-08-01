@@ -8,6 +8,8 @@ module.exports = {
   },
   collectCoverageFrom: [
     'src/shared.ts',
+    'src/namefilter.ts',
+    'src/blocklist.ts',
     'src/daylog.ts',
     'src/index.ts',
     'src/trial.ts',

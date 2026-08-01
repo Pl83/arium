@@ -9,3 +9,5 @@
 
 require('../src/theme');
 require('../src/shared');
+require('../src/namefilter');
+require('../src/blocklist');

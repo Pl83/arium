@@ -198,27 +198,43 @@ document.getElementById('editNameBtn')!.addEventListener('click', () => {
   input.type = 'text';
   input.value = current;
   input.className = 'name-input';
-  input.maxLength = 20;
+  input.maxLength = NAME_MAX_LEN;
 
   const saveBtn = document.createElement('button');
   saveBtn.textContent = '✓';
   saveBtn.className = 'save-name-btn';
 
+  const error = document.createElement('p');
+  error.className = 'name-error';
+  error.hidden = true;
+
   const nameSection = document.getElementById('nameSection') as HTMLElement;
   nameSection.appendChild(input);
   nameSection.appendChild(saveBtn);
+  nameSection.appendChild(error);
+  input.addEventListener('input', () => { error.hidden = true; });
   input.focus();
   input.select();
 
   function save(): void {
-    const raw     = input.value.trim() || 'Saint';
-    const newName = raw.replace(/[^\p{L}\p{N} _.'\\-]/gu, '').slice(0, 20) || 'Saint';
+    const newName = sanitizePlayerName(input.value);
+
+    // Refused, not silently corrected: the player must see why and choose again.
+    if (!isNameClean(newName)) {
+      error.textContent = 'That name is not permitted. Choose another.';
+      error.hidden = false;
+      input.focus();
+      input.select();
+      return;
+    }
+
     localStorage.setItem('playerName', newName);
     nameTag.textContent = newName;
     nameTag.style.display = '';
     editBtn.style.display = '';
     input.remove();
     saveBtn.remove();
+    error.remove();
   }
 
   saveBtn.addEventListener('click', save);

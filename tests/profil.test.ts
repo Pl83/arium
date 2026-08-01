@@ -194,11 +194,55 @@ describe('editNameBtn', () => {
     expect(localStorage.getItem('playerName')).toBe('Saint');
   });
 
-  it('removes the input and save button from the DOM after saving', () => {
+  it('removes the input, save button and error line from the DOM after saving', () => {
     document.getElementById('editNameBtn').click();
     document.querySelector('.save-name-btn').click();
     expect(document.querySelector('.name-input')).toBeNull();
     expect(document.querySelector('.save-name-btn')).toBeNull();
+    expect(document.querySelector('.name-error')).toBeNull();
+  });
+
+  it('refuses a banned name, keeps the editor open and explains why', () => {
+    localStorage.setItem('playerName', 'Selene');
+    document.getElementById('editNameBtn').click();
+    (document.querySelector('.name-input') as HTMLInputElement).value = 'Connard';
+    document.querySelector('.save-name-btn').click();
+
+    const error = document.querySelector('.name-error') as HTMLElement;
+    expect(localStorage.getItem('playerName')).toBe('Selene');
+    expect(document.querySelector('.name-input')).not.toBeNull();
+    expect(error.hidden).toBe(false);
+    expect(error.textContent).toBe('That name is not permitted. Choose another.');
+  });
+
+  it('clears the error as soon as the player types again', () => {
+    document.getElementById('editNameBtn').click();
+    const input = document.querySelector('.name-input') as HTMLInputElement;
+    input.value = 'Connard';
+    document.querySelector('.save-name-btn').click();
+    expect((document.querySelector('.name-error') as HTMLElement).hidden).toBe(false);
+
+    input.value = 'Selene';
+    input.dispatchEvent(new Event('input'));
+    expect((document.querySelector('.name-error') as HTMLElement).hidden).toBe(true);
+  });
+
+  it('accepts a clean name after one was refused', () => {
+    document.getElementById('editNameBtn').click();
+    const input = document.querySelector('.name-input') as HTMLInputElement;
+    input.value = 'Connard';
+    document.querySelector('.save-name-btn').click();
+    input.value = 'Selene';
+    document.querySelector('.save-name-btn').click();
+
+    expect(localStorage.getItem('playerName')).toBe('Selene');
+    expect(document.querySelector('.name-input')).toBeNull();
+  });
+
+  it('caps the name at the shared maximum length', () => {
+    document.getElementById('editNameBtn').click();
+    const input = document.querySelector('.name-input') as HTMLInputElement;
+    expect(input.maxLength).toBe((global as any).NAME_MAX_LEN);
   });
 
   it('does not save on non-Enter key presses', () => {

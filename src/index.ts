@@ -53,12 +53,25 @@ function maybeShowNameSetup(callback: () => void): void {
   const overlay = document.getElementById('name-setup') as HTMLElement;
   const input   = document.getElementById('name-setup-input') as HTMLInputElement;
   const btn     = document.getElementById('name-setup-btn') as HTMLButtonElement;
+  const error   = document.getElementById('name-setup-error') as HTMLElement;
 
   overlay.style.display = 'flex';
   input.focus();
+  input.addEventListener('input', () => { error.hidden = true; });
 
   function confirm(): void {
-    const name = input.value.trim() || 'Saint';
+    const name = sanitizePlayerName(input.value);
+
+    // This name goes straight to the public leaderboard, so it is vetted here
+    // rather than corrected silently.
+    if (!isNameClean(name)) {
+      error.textContent = 'That name is not permitted. Choose another.';
+      error.hidden = false;
+      input.focus();
+      input.select();
+      return;
+    }
+
     localStorage.setItem('playerName', name);
     overlay.style.display = 'none';
     callback();

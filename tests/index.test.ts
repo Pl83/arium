@@ -17,6 +17,7 @@ const INDEX_DOM = `
   </div>
   <div id="name-setup" style="display:none;">
     <input id="name-setup-input" type="text">
+    <p id="name-setup-error" hidden></p>
     <button id="name-setup-btn"></button>
   </div>
   <main class="app">
@@ -127,6 +128,58 @@ describe('maybeShowNameSetup', () => {
     const input = document.getElementById('name-setup-input') as HTMLInputElement;
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
     expect(cb).not.toHaveBeenCalled();
+  });
+
+  it('strips characters a name may not contain', () => {
+    localStorage.removeItem('playerName');
+    (global as any).maybeShowNameSetup(jest.fn());
+    const input = document.getElementById('name-setup-input') as HTMLInputElement;
+    input.value = 'Kira🔥';
+    document.getElementById('name-setup-btn')!.click();
+    expect(localStorage.getItem('playerName')).toBe('Kira');
+  });
+
+  it('refuses a banned name, keeps the overlay open and explains why', () => {
+    localStorage.removeItem('playerName');
+    const cb = jest.fn();
+    (global as any).maybeShowNameSetup(cb);
+    const input = document.getElementById('name-setup-input') as HTMLInputElement;
+    input.value = 'Fucker';
+    document.getElementById('name-setup-btn')!.click();
+
+    const error = document.getElementById('name-setup-error')!;
+    expect(localStorage.getItem('playerName')).toBeNull();
+    expect(cb).not.toHaveBeenCalled();
+    expect(document.getElementById('name-setup')!.style.display).toBe('flex');
+    expect(error.hidden).toBe(false);
+    expect(error.textContent).toBe('That name is not permitted. Choose another.');
+  });
+
+  it('clears the error as soon as the player types again', () => {
+    localStorage.removeItem('playerName');
+    (global as any).maybeShowNameSetup(jest.fn());
+    const input = document.getElementById('name-setup-input') as HTMLInputElement;
+    input.value = 'Fucker';
+    document.getElementById('name-setup-btn')!.click();
+    expect(document.getElementById('name-setup-error')!.hidden).toBe(false);
+
+    input.value = 'Kira';
+    input.dispatchEvent(new Event('input'));
+    expect(document.getElementById('name-setup-error')!.hidden).toBe(true);
+  });
+
+  it('accepts a clean name after one was refused', () => {
+    localStorage.removeItem('playerName');
+    const cb = jest.fn();
+    (global as any).maybeShowNameSetup(cb);
+    const input = document.getElementById('name-setup-input') as HTMLInputElement;
+    input.value = 'Fucker';
+    document.getElementById('name-setup-btn')!.click();
+    input.value = 'Kira';
+    document.getElementById('name-setup-btn')!.click();
+
+    expect(localStorage.getItem('playerName')).toBe('Kira');
+    expect(cb).toHaveBeenCalledTimes(1);
   });
 });
 

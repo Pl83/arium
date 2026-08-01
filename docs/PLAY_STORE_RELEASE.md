@@ -2,9 +2,12 @@
 
 **Goal:** ship Ironvow on Google Play. Free. No ads. No transactions. No in-app purchases.
 
-**Status as of 2026-07-31:** not submittable. Five hard blockers, four defects worth
-fixing first, and one administrative requirement that takes **14 calendar days** and
-cannot be shortened.
+**Status as of 2026-08-01:** not submittable. **Four** hard blockers (§1.1, §1.2, §1.3,
+§1.5), **three** defects worth fixing first (§2.1, §2.2, §2.4), and one administrative
+requirement that takes **14 calendar days** and cannot be shortened.
+
+Cleared so far: the app identity (below), the UGC reporting and blocking obligation
+(§1.4, one written paragraph still owed) and the unsanitized name path (§2.3).
 
 Everything below was verified against the working tree on `develop`, not from memory.
 Where I did not verify something, it says so.
@@ -110,28 +113,38 @@ Points that need a deliberate answer:
   `deletePlayer()` in `src/supabase.ts:37` removes the server row. Say so; it is a
   positive signal.
 
-### 1.4 User-generated content with no reporting mechanism — **highest rejection risk**
+### 1.4 User-generated content — **largely cleared 2026-08-01**
 
-`player_name` is free text (max 20 chars) and is rendered to **every user** of the app
-on the rankings page — `src/rankings.ts:57`. That makes Ironvow a UGC host under Google's
-User Generated Content policy, which requires:
+`player_name` is free text (max 20 chars) and is rendered to **every user** of the app on
+the rankings page. That makes Ironvow a UGC host under Google's User Generated Content
+policy, which requires three things:
 
-1. An **in-app mechanism to report** objectionable content
-2. A means to **block abusive users** from the reporting user's view
-3. A stated moderation process, and actual moderation
+| Requirement | Status |
+|---|---|
+| An in-app mechanism to report objectionable content | **Done** — hold any leaderboard row that is not your own; a confirmation sheet opens (`src/rankings.ts`) |
+| A means to block abusive users from the reporter's view | **Done** — a confirmed report adds the name to a device-local block list and it is filtered from every later render (`src/blocklist.ts`) |
+| A stated moderation policy, and actual moderation | **Partly** — see below |
 
-Ironvow has none of the three. The name filter that does exist is a character whitelist
-(`src/profil.ts:215`), which stops nothing — it permits any slur spelled with letters.
+The chosen model is **per-device moderation**: a report hides that player for the
+reporting user only, and nothing is sent to the server. Each user curates their own
+leaderboard, so the tolerance threshold is theirs rather than ours. This is a legitimate
+reading of the policy — the requirement is that a user can escape content they object to,
+not that a central authority adjudicates. It also means there is no report queue to staff,
+which for a free single-maintainer app is the difference between shipping and not.
 
-This is the single most likely cause of rejection, and it is the largest piece of work
-of everything on this page. It needs its own design session: a `reports` table with RLS,
-a report affordance on each leaderboard row, a device-local block list, and a policy for
-what you do when a report arrives.
+Ahead of reporting there is now a **banned-word filter** (`src/namefilter.ts`): a
+two-tier list — fragments matched anywhere, plus short or ambiguous terms matched only as
+whole words — over a normalizer that folds case, strips diacritics, undoes leetspeak and
+collapses padded repeats. Both name entry paths run it and refuse the name outright.
 
-**Cheaper alternative worth considering:** drop free-text names entirely and generate
-handles from a curated word list (`Iron Hound #4417`). No UGC, no reporting requirement,
-no moderation burden, and it fits the app's tone. This eliminates blocker 1.4 completely
-rather than solving it. Decide this before building anything.
+**What is still owed:** the moderation approach must be *stated in writing* where a
+reviewer will find it — one paragraph in the privacy policy (§1.2) and one line in the
+store listing. Google looks for a published policy, not only a working button. Write it
+when you write the privacy policy.
+
+**Note for the reviewer's sake:** a hold gesture is invisible. The rankings page carries a
+permanent "Hold a Saint to report and hide them" caption for exactly this reason — a
+reviewer who cannot find the reporting mechanism will treat it as absent. Do not remove it.
 
 ### 1.5 No store assets
 
@@ -190,17 +203,16 @@ Fix: recompress the source, generate the density set (mdpi through xxxhdpi), aut
 foreground/background/monochrome layers, and declare them in a `<platform name="android">`
 block in `config.xml`.
 
-### 2.3 First-run name is stored unsanitized
+### 2.3 First-run name stored unsanitized — **fixed 2026-08-01**
 
-Two paths write `playerName` and they disagree:
+The two paths that write `playerName` disagreed: the profile editor stripped to a
+character whitelist and capped the length, while the **first-run** path — where most
+names actually originate — stored `input.value.trim()` with no filtering and no cap,
+and `initRankings()` uploaded it straight to the public leaderboard.
 
-- `src/profil.ts:213-216` — strips to a character whitelist, caps at 20, falls back to `Saint`
-- `src/index.ts:60-62` — `input.value.trim() || 'Saint'`, **no filtering, no length cap**
-
-The unsanitized path is the **first-run** one, so it is what most players' names come
-from, and `initRankings()` uploads it straight to the public leaderboard
-(`src/rankings.ts:102`). The `maxLength` attribute on the input element is the only
-guard, and an attribute is not a validation.
+Both now call `sanitizePlayerName()` and `isNameClean()` from `src/namefilter.ts`. A name
+that survives sanitizing but hits the banned-word list is refused with a visible reason
+rather than silently corrected.
 
 Fix: extract the sanitizer into `src/shared.ts` and call it from both paths. Small change,
 and it stops being relevant at all if you take the generated-handle option in §1.4.
@@ -276,19 +288,20 @@ The dependencies are real; this order avoids doing work twice.
 
 1. **Check the developer account type.** If personal, start recruiting 12 testers today.
    The 14-day clock is the long pole and runs in parallel with everything else.
-2. **Decide §1.4 — free-text names or generated handles.** This choice determines whether
-   there is a UGC campaign at all, and it changes §2.3 and the privacy policy text.
+2. ~~Decide §1.4~~ — **done.** Free-text names kept, with a banned-word filter, hold-to-
+   report and a device-local block list. §2.3 fell out of the same change.
 3. **Self-host the fonts (§2.1).** Do this before the Data Safety form so the form is
    simpler.
 4. **Fix the icon (§2.2) and `config.xml` (§2.4).** Same area of the build, one pass.
-5. **Fix name sanitization (§2.3)** — unless step 2 removed it.
-6. **Write the privacy policy and deletion page**, host on GitHub Pages, get the URLs.
-7. **Generate the keystore, build a signed AAB (§1.1),** back the keystore up in two
+5. **Write the privacy policy and deletion page**, host on GitHub Pages, get the URLs.
+   Include the moderation paragraph §1.4 still owes.
+6. **Generate the keystore, build a signed AAB (§1.1),** back the keystore up in two
    places.
-8. **Produce store assets (§1.5)** — screenshots come last, from the finished build.
-9. **Fill the Console forms** — Data Safety, content rating, target audience, ads.
-10. **Upload to closed testing.** If the 14-day clock started at step 1, it may already
-    be satisfied.
+7. **Produce store assets (§1.5)** — screenshots come last, from the finished build.
+   Include one of the rankings page: it shows the report affordance exists.
+8. **Fill the Console forms** — Data Safety, content rating, target audience, ads.
+9. **Upload to closed testing.** If the 14-day clock started at step 1, it may already
+   be satisfied.
 
 Steps 3-5 are code. Step 6 is prose. Steps 1, 7-10 are yours to execute; I can prepare
 every input for them.
