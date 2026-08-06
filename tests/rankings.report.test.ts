@@ -46,6 +46,9 @@ beforeEach(() => {
   require('../src/namefilter');
   require('../src/blocklist');
   require('../src/supabase');
+  // Mirrors rankings.html: houses.ts names the row's house, splash.ts draws it.
+  require('../src/houses');
+  require('../src/splash');
   rankingsModule = require('../src/rankings');
 });
 

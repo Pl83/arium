@@ -1,0 +1,139 @@
+/* ═══════════════════════════════════════════════════════════════════
+   IRONVOW — OMENS
+
+   Two presentations of the same event:
+     .omen-toast  transient, stacked bottom-up above the footer nav
+     .omen-row    a line in the Chronicle's Omens log
+
+   They share .omen-icon / .omen-title / .omen-body so a kind reads the
+   same in both places.
+
+   Colours come from theme.css tokens only. Declare no palette values here.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── The toast stack ──────────────────────────────────────────────── */
+
+/* Created on demand by src/omens.ts, so no page carries markup for it.
+   Sits above the footer nav and clear of the home indicator. */
+#omen-stack {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  z-index: 9000;
+  display: flex;
+  flex-direction: column-reverse;   /* newest nearest the thumb */
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  pointer-events: none;             /* the stack never eats taps... */
+}
+
+.omen-toast {
+  pointer-events: auto;             /* ...but each toast is dismissible */
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 26rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--gold-soft);
+  border-radius: 12px;
+  background: var(--panel-bg);
+  box-shadow: var(--panel-glow);
+  color: var(--fg);
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 350ms ease, transform 350ms ease;
+  animation: omen-in 320ms ease-out;
+}
+
+@keyframes omen-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Applied by omens.ts; the node is REMOVED after the transition, not merely
+   left invisible on top of the app. Must match OMEN_FADE_MS. */
+.omen-toast.omen-out {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+/* ── The log ──────────────────────────────────────────────────────── */
+
+.omen-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.2rem;
+  border-bottom: 1px solid var(--track-tick);
+}
+
+.omen-row:last-child { border-bottom: none; }
+
+.omen-when {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--fg-dim);
+}
+
+.omen-empty {
+  padding: 2rem 0;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+
+/* ── Shared innards ───────────────────────────────────────────────── */
+
+.omen-icon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  color: var(--gold);
+}
+
+.omen-text { min-width: 0; }        /* lets long bodies ellipsize, not overflow */
+
+.omen-title {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.omen-body {
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 0.78rem;
+  color: var(--fg-muted);
+}
+
+/* ── Per-kind accents ─────────────────────────────────────────────── */
+
+/* Only the icon and title recolour. The card itself stays neutral so a
+   Rebuke never reads as an error state the player must act on. */
+.omen-rebuke  .omen-icon,
+.omen-rebuke  .omen-title { color: var(--danger); }
+
+.omen-streak  .omen-icon,
+.omen-streak  .omen-title { color: var(--success); }
+
+.omen-levelup .omen-icon,
+.omen-levelup .omen-title { color: var(--violet-bright); }
+
+/* Ascension is the rarest event in the app, and dwells the longest. */
+.omen-toast.omen-ascension {
+  border-color: var(--gold);
+  box-shadow: 0 0 22px var(--gold-halo), var(--panel-glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .omen-toast { animation: none; transition: opacity 350ms ease; }
+  .omen-toast.omen-out { transform: none; }
+}

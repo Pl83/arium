@@ -312,86 +312,9 @@ main.app {
   line-height: 1.6;
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   MODAL — rebuke / ascension
-   ═══════════════════════════════════════════════════════════════════ */
-
-#overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--scrim);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  z-index: 5;
-}
-
-
-#info {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 76vw;
-  min-height: 20vh;
-  z-index: 10;
-  color: var(--fg);
-  border-color: var(--danger);
-}
-
-#info::before { background-color: var(--danger); }
-
-#info.rank-up { border-color: var(--gold); }
-#info.rank-up::before { background-color: var(--gold); }
-
-#info .banner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 28px 20px 24px;
-  gap: 14px;
-  position: relative;
-  z-index: 1;
-}
-
-#info .banner .alert {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 14px;
-  border-top: 1px solid var(--danger);
-  border-bottom: 1px solid var(--danger);
-  color: var(--danger);
-}
-
-#info.rank-up .banner .alert {
-  border-color: var(--gold);
-  color: var(--gold);
-}
-
-#info .banner .alert h2 {
-  font-family: var(--font-display);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--danger);
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  text-shadow: 0 0 12px var(--danger);
-}
-
-#info.rank-up .banner .alert h2 {
-  color: var(--gold);
-  text-shadow: 0 0 12px var(--gold);
-}
-
-#info .banner p {
-  font-size: 11px;
-  color: var(--fg);
-  line-height: 1.7;
-  text-align: center;
-  letter-spacing: 0.04em;
-}
+/* The rebuke / ascension modal is gone. Both are omens now — styled in
+   omens.css, raised onto a toast stack that needs no markup on this page.
+   The matching #info block in theme.css went with it. */
 
 /* ═══════════════════════════════════════════════════════════════════
    FIRST-RUN REGISTRATION

@@ -23,6 +23,11 @@ beforeEach(() => {
   jest.resetModules();
   require('../src/shared');
   require('../src/supabase');
+  // houses.ts before splash.ts, as in rankings.html: the row's house badge is
+  // built by splash.ts and named by houses.ts.
+  require('../src/houses');
+  // splash.ts provides sigilLoaderMarkup, used for the waiting state.
+  require('../src/splash');
   rankingsModule = require('../src/rankings');
 });
 
@@ -134,6 +139,48 @@ describe('renderRankings', () => {
   });
 });
 
+// ── The house badge on a row ─────────────────────────────────────────────────
+
+describe('renderRankings — house badge', () => {
+  it('wears the badge of the house on the row', () => {
+    const rows = [makeRow({ rank_letter: 'E', house: 'capricorn' })];
+    rankingsModule.renderRankings(rows, 'nobody', false);
+
+    const badge = document.querySelector('.row-name .house-badge');
+    expect(badge).not.toBeNull();
+    expect(badge!.getAttribute('aria-label')).toBe('House of Capricorn');
+  });
+
+  // Rows written before the column existed carry null; a rankingsCache left by
+  // such a build carries no key at all. Neither may draw anything.
+  it('draws no badge for a row with no house', () => {
+    rankingsModule.renderRankings(
+      [makeRow({ rank_letter: 'E', house: null }), makeRow({ device_id: 'd2', rank_letter: 'E' })],
+      'nobody', false,
+    );
+    expect(document.querySelectorAll('.house-badge')).toHaveLength(0);
+  });
+
+  // The column is checked server-side, but the client must not depend on that:
+  // an id this build does not know draws nothing rather than breaking the row.
+  it('draws no badge for a house this build does not know', () => {
+    rankingsModule.renderRankings(
+      [makeRow({ rank_letter: 'E', house: 'ophiuchus' })], 'nobody', false,
+    );
+    expect(document.querySelector('.house-badge')).toBeNull();
+    expect(document.querySelector('.row-name')!.textContent).toBe('Hunter');
+  });
+
+  // The name owns the ellipsis, not the row: a long name must truncate without
+  // taking the badge beside it with it.
+  it('keeps the name in its own element beside the badge', () => {
+    rankingsModule.renderRankings(
+      [makeRow({ rank_letter: 'E', house: 'leo' })], 'nobody', false,
+    );
+    expect(document.querySelector('.row-name-text')!.textContent).toBe('Hunter');
+  });
+});
+
 // ── renderOfflineEmpty ────────────────────────────────────────────────────────
 
 describe('renderOfflineEmpty', () => {
@@ -152,6 +199,41 @@ describe('renderOfflineEmpty', () => {
     document.querySelector('.app')!.innerHTML = '<p class="stale">stale</p>';
     rankingsModule.renderOfflineEmpty();
     expect(document.querySelector('.stale')).toBeNull();
+  });
+});
+
+// ── initRankings — what it syncs ─────────────────────────────────────────────
+
+// The badge on everyone else's device is only as good as what this one sends.
+describe('initRankings — house sync', () => {
+  function upsertBody(mockFetch: jest.Mock): Record<string, unknown> {
+    const call = mockFetch.mock.calls.find(([, opts]) => opts && opts.method === 'POST');
+    return JSON.parse(call![1].body);
+  }
+
+  it('sends the held house up with the row', async () => {
+    localStorage.setItem('playerName', 'Tester');
+    localStorage.setItem('house', 'gemini');
+    const mockFetch = jest.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([]) });
+    global.fetch = mockFetch;
+
+    await rankingsModule.initRankings();
+
+    expect(upsertBody(mockFetch).house).toBe('gemini');
+  });
+
+  // Explicit null, not an omitted key: a player who abandons a house must have
+  // the old glyph cleared from their row, and a missing key would leave it.
+  it('sends null when no house is held', async () => {
+    localStorage.setItem('playerName', 'Tester');
+    const mockFetch = jest.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve([]) });
+    global.fetch = mockFetch;
+
+    await rankingsModule.initRankings();
+
+    const body = upsertBody(mockFetch);
+    expect(body).toHaveProperty('house');
+    expect(body.house).toBeNull();
   });
 });
 

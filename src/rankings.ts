@@ -147,9 +147,27 @@ function renderRankings(rows: PlayerRow[], deviceId: string, offline: boolean): 
       pos.className = 'row-pos';
       pos.textContent = String(idx + 1);
 
+      // The badge is a sibling of the name text rather than a prefix inside it,
+      // so .row-name keeps its ellipsis on the text alone — a long name must
+      // truncate without eating the glyph.
       const name = document.createElement('span');
       name.className = 'row-name';
-      name.textContent = player.player_name;
+
+      // houseName() returns null for anything not in HOUSES, which covers a row
+      // written by a future version and a hand-poked database alike; that case
+      // draws no badge at all rather than a mystery glyph.
+      const houseId    = player.house;
+      const houseLabel = houseName(houseId ?? null);
+      const badge = houseLabel === null
+        ? null
+        : houseGlyphSvg(houseId, 'House of ' + houseLabel);
+      if (badge) name.appendChild(badge);
+
+      // textContent, never innerHTML: this string came from another user.
+      const nameText = document.createElement('span');
+      nameText.className = 'row-name-text';
+      nameText.textContent = player.player_name;
+      name.appendChild(nameText);
 
       const lvl  = document.createElement('span');
       lvl.className = 'row-level';
@@ -241,10 +259,11 @@ async function initRankings(): Promise<void> {
     total_xp:    xp,
     level:       level,
     rank_letter: rank.rank,
+    house:       getHouse(),
   }).catch(() => { /* silent — offline upsert failure is non-fatal */ });
 
   const appEl = document.querySelector('.app') as HTMLElement;
-  appEl.innerHTML = '<div class="loading-state">Loading rankings…</div>';
+  appEl.innerHTML = sigilLoaderMarkup('Consulting the standings…');
 
   try {
     const rows = await fetchLeaderboard();

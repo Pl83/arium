@@ -11,12 +11,218 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="css/theme.css">
+        <link rel="stylesheet" href="css/splash.css">
+        <link rel="stylesheet" href="css/omens.css">
         <link rel="stylesheet" href="css/index.css">
         <!-- Applies the stored theme before first paint; must stay in <head> -->
         <script src="js/theme.js"></script>
+        <!-- Stamps data-house on <html> before first paint, so the opening sigil
+             lights the chosen glyph on frame one instead of flickering from
+             twelve-equal to one-lit. Must stay in <head> for the same reason
+             theme.js does. -->
+        <script src="js/houses.js"></script>
+        <!-- Suppresses the opening on every load after the first of an app
+             session, so the footer nav's return to Home does not replay it.
+             Must stay in <head>: once the parser reaches #splash below, the
+             sigil can paint, and suppressing it then would read as a flash. -->
+        <script src="js/splashgate.js"></script>
         <title>IRONVOW</title>
     </head>
     <body>
+
+        <!-- ══ Opening sigil ══════════════════════════════════════════════
+             Inlined rather than injected: this must paint on the very first
+             frame, before cordova.js and js/index.js have even been fetched.
+             js/splash.js only takes it down, once the boot chain reports ready.
+
+             The zodiac glyphs are hand-drawn paths, NOT text. Android WebView
+             has no guaranteed symbol font and the CSP forbids fetching one, so
+             ♈♉♊ as characters would render as tofu boxes on a real device.
+        ══════════════════════════════════════════════════════════════════ -->
+        <div id="splash">
+            <div class="splash-stage">
+                <svg class="splash-svg" viewBox="0 0 400 400" fill="none" stroke="currentColor" aria-hidden="true">
+
+                    <!-- Glyph library. Each sign is drawn in its own 24×24 box,
+                         centred on (12,12), then placed by <use> below.
+
+                         Pure path data, never <circle>: the same twelve glyphs
+                         are duplicated in www/profile.html, in src/splash.ts
+                         (for pages that inline no defs) and in
+                         res/android/splash/ic_splash_sigil.xml, whose
+                         VectorDrawable dialect HAS no circle primitive. Keeping
+                         all four arc-only lets them stay byte-identical, which
+                         is what tests/splash.test.ts and tests/houses.test.ts
+                         check between them. -->
+                    <defs>
+                        <g id="zg-aries" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 10V20.5"/>
+                            <path d="M12 10C12 5.5 9.5 3.5 7 3.5C4.5 3.5 3 5.8 3.5 9"/>
+                            <path d="M12 10C12 5.5 14.5 3.5 17 3.5C19.5 3.5 21 5.8 20.5 9"/>
+                        </g>
+                        <g id="zg-taurus" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6.8 15.5A5.2 5.2 0 0 1 17.2 15.5A5.2 5.2 0 0 1 6.8 15.5Z"/>
+                            <path d="M6.2 10.5A6 6 0 0 1 17.8 10.5"/>
+                        </g>
+                        <g id="zg-gemini" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M8 5.5V18.5M16 5.5V18.5"/>
+                            <path d="M4.8 4.6C8 3 16 3 19.2 4.6"/>
+                            <path d="M4.8 19.4C8 21 16 21 19.2 19.4"/>
+                        </g>
+                        <g id="zg-cancer" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4.8 10.2C8 5.8 16.4 5.8 19.4 9.4"/>
+                            <path d="M17.4 11.2A2.2 2.2 0 0 1 21.8 11.2A2.2 2.2 0 0 1 17.4 11.2Z"/>
+                            <path d="M19.2 13.8C16 18.2 7.6 18.2 4.6 14.6"/>
+                            <path d="M2.2 12.8A2.2 2.2 0 0 1 6.6 12.8A2.2 2.2 0 0 1 2.2 12.8Z"/>
+                        </g>
+                        <g id="zg-leo" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4.3 16.4A4.2 4.2 0 0 1 12.7 16.4A4.2 4.2 0 0 1 4.3 16.4Z"/>
+                            <path d="M12.2 14.4C13.4 10.6 10.6 7.4 12.6 5C14.6 2.6 18.4 4 18.6 7.2C18.8 10 17 11.6 17 14C17 16.4 18.2 18.2 20 19"/>
+                        </g>
+                        <g id="zg-virgo" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 5.5V17.5"/>
+                            <path d="M4 7.4C4.6 5.4 7 5 7.8 7C8.2 8 8.2 9 8.2 10V17.5"/>
+                            <path d="M8.2 7.4C8.8 5.4 11.2 5 12 7C12.4 8 12.4 9 12.4 10V16.5"/>
+                            <path d="M12.4 9.6C13.6 6.6 16.6 5.8 18.2 7.8C20 10 18.6 14.6 15 17.2C13.6 18.2 12.4 19 11.6 20.4"/>
+                            <path d="M9 15.6C10.6 19 14.4 20.6 17.6 19.4"/>
+                        </g>
+                        <g id="zg-libra" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3.5 19H20.5"/>
+                            <path d="M3.5 13.6H8.4M15.6 13.6H20.5"/>
+                            <path d="M8.4 13.6A3.8 3.8 0 0 1 15.6 13.6"/>
+                        </g>
+                        <g id="zg-scorpio" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 5.5V17.5"/>
+                            <path d="M4 7.4C4.6 5.4 7 5 7.8 7C8.2 8 8.2 9 8.2 10V17.5"/>
+                            <path d="M8.2 7.4C8.8 5.4 11.2 5 12 7C12.4 8 12.4 9 12.4 10V18.6L19.5 11.5"/>
+                            <path d="M14.8 11.5H19.6V16.3"/>
+                        </g>
+                        <g id="zg-sagittarius" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4.5 19.5L19.4 5"/>
+                            <path d="M12.4 4.6H19.9V12.1"/>
+                            <path d="M8.2 9.6L14.4 15.8"/>
+                        </g>
+                        <g id="zg-capricorn" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 6V18"/>
+                            <path d="M4 8C4.6 6 7 5.6 7.8 7.6L11.8 15.6"/>
+                            <path d="M11.8 15.6C12.6 11.4 15 9.2 17.2 10.4C19.6 11.8 19.4 16.4 16.4 17.8C14.6 18.6 13 17.6 13.2 16"/>
+                        </g>
+                        <g id="zg-aquarius" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3.5 10.6L7 7.4L10.5 10.6L14 7.4L17.5 10.6L21 7.4"/>
+                            <path d="M3.5 17.4L7 14.2L10.5 17.4L14 14.2L17.5 17.4L21 14.2"/>
+                        </g>
+                        <g id="zg-pisces" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M7.4 3.6C4 7.6 4 16.4 7.4 20.4"/>
+                            <path d="M16.6 3.6C20 7.6 20 16.4 16.6 20.4"/>
+                            <path d="M4.6 12H19.4"/>
+                        </g>
+                    </defs>
+
+                    <!-- LAYER 1 · outer rim -->
+                    <g class="ring rim">
+                        <circle cx="200" cy="200" r="197" stroke-width="1" opacity=".55"/>
+                        <circle cx="200" cy="200" r="189" stroke-width="1" opacity=".8"/>
+                        <circle cx="200" cy="200" r="183" stroke-width="4" stroke-dasharray="1.5 16" opacity=".5"/>
+                    </g>
+
+                    <!-- LAYER 2 · the zodiac wheel and its twelve houses -->
+                    <g class="ring wheel">
+                        <circle cx="200" cy="200" r="178" stroke-width="1" opacity=".7"/>
+                        <circle cx="200" cy="200" r="138" stroke-width="1" opacity=".7"/>
+
+                        <!-- House divisions: one spoke, rotated twelve times -->
+                        <g stroke-width="1" opacity=".55">
+                            <line x1="200" y1="22" x2="200" y2="62" transform="rotate(15 200 200)"/>
+                            <line x1="200" y1="22" x2="200" y2="62" transform="rotate(45 200 200)"/>
+                            <line x1="200" y1="22" x2="200" y2="62" transform="rotate(75 200 200)"/>
+                            <line x1="200" y1="22" x2="200" y2="62" transform="rotate(105 200 200)"/>
+                            <line x1="200" y1="22" x2="200" y2="62" transform="rotate(135 200 200)"/>
+                            <line x1="200" y1="22" x2="200" y2="62" transform="rotate(165 200 200)"/>
+                            <line x1="200" y1="22" x2="200" y2="62" transform="rotate(195 200 200)"/>
+                            <line x1="200" y1="22" x2="200" y2="62" transform="rotate(225 200 200)"/>
+                            <line x1="200" y1="22" x2="200" y2="62" transform="rotate(255 200 200)"/>
+                            <line x1="200" y1="22" x2="200" y2="62" transform="rotate(285 200 200)"/>
+                            <line x1="200" y1="22" x2="200" y2="62" transform="rotate(315 200 200)"/>
+                            <line x1="200" y1="22" x2="200" y2="62" transform="rotate(345 200 200)"/>
+                        </g>
+
+                        <!-- The signs, clockwise from Aries at the top.
+                             Two levels, and the nesting is load-bearing: a CSS
+                             `transform` REPLACES an SVG transform attribute
+                             rather than composing with it, so styling the
+                             chosen glyph directly would discard its placement
+                             and collapse all twelve onto the origin.
+                             Placement stays an attribute on .house-slot;
+                             splash.css owns .house-emph and nothing else. -->
+                        <g class="house-ring" opacity=".9">
+                            <g class="house-slot" data-house="aries" transform="translate(200 42)">
+                                <g class="house-emph"><use href="#zg-aries" transform="scale(1.15) translate(-12 -12)"/></g>
+                            </g>
+                            <g class="house-slot" data-house="taurus" transform="translate(279 63.2)">
+                                <g class="house-emph"><use href="#zg-taurus" transform="scale(1.15) translate(-12 -12)"/></g>
+                            </g>
+                            <g class="house-slot" data-house="gemini" transform="translate(336.8 121)">
+                                <g class="house-emph"><use href="#zg-gemini" transform="scale(1.15) translate(-12 -12)"/></g>
+                            </g>
+                            <g class="house-slot" data-house="cancer" transform="translate(358 200)">
+                                <g class="house-emph"><use href="#zg-cancer" transform="scale(1.15) translate(-12 -12)"/></g>
+                            </g>
+                            <g class="house-slot" data-house="leo" transform="translate(336.8 279)">
+                                <g class="house-emph"><use href="#zg-leo" transform="scale(1.15) translate(-12 -12)"/></g>
+                            </g>
+                            <g class="house-slot" data-house="virgo" transform="translate(279 336.8)">
+                                <g class="house-emph"><use href="#zg-virgo" transform="scale(1.15) translate(-12 -12)"/></g>
+                            </g>
+                            <g class="house-slot" data-house="libra" transform="translate(200 358)">
+                                <g class="house-emph"><use href="#zg-libra" transform="scale(1.15) translate(-12 -12)"/></g>
+                            </g>
+                            <g class="house-slot" data-house="scorpio" transform="translate(121 336.8)">
+                                <g class="house-emph"><use href="#zg-scorpio" transform="scale(1.15) translate(-12 -12)"/></g>
+                            </g>
+                            <g class="house-slot" data-house="sagittarius" transform="translate(63.2 279)">
+                                <g class="house-emph"><use href="#zg-sagittarius" transform="scale(1.15) translate(-12 -12)"/></g>
+                            </g>
+                            <g class="house-slot" data-house="capricorn" transform="translate(42 200)">
+                                <g class="house-emph"><use href="#zg-capricorn" transform="scale(1.15) translate(-12 -12)"/></g>
+                            </g>
+                            <g class="house-slot" data-house="aquarius" transform="translate(63.2 121)">
+                                <g class="house-emph"><use href="#zg-aquarius" transform="scale(1.15) translate(-12 -12)"/></g>
+                            </g>
+                            <g class="house-slot" data-house="pisces" transform="translate(121 63.2)">
+                                <g class="house-emph"><use href="#zg-pisces" transform="scale(1.15) translate(-12 -12)"/></g>
+                            </g>
+                        </g>
+                    </g>
+
+                    <!-- LAYER 3 · inner constellation — a {12/5} dodecagram -->
+                    <g class="ring star">
+                        <circle cx="200" cy="200" r="112" stroke-width="1" opacity=".6"/>
+                        <circle cx="200" cy="200" r="84" stroke-width=".8" opacity=".45"/>
+                        <path d="M200,100 250,286.6 113.4,150 300,200 113.4,250 250,113.4 200,300 150,113.4 286.6,250 100,200 286.6,150 150,286.6 Z"
+                              stroke-width="1" opacity=".55" stroke-linejoin="round"/>
+                        <g fill="currentColor" stroke="none" opacity=".8">
+                            <circle cx="200" cy="100" r="2"/><circle cx="250" cy="113.4" r="2"/>
+                            <circle cx="286.6" cy="150" r="2"/><circle cx="300" cy="200" r="2"/>
+                            <circle cx="286.6" cy="250" r="2"/><circle cx="250" cy="286.6" r="2"/>
+                            <circle cx="200" cy="300" r="2"/><circle cx="150" cy="286.6" r="2"/>
+                            <circle cx="113.4" cy="250" r="2"/><circle cx="100" cy="200" r="2"/>
+                            <circle cx="113.4" cy="150" r="2"/><circle cx="150" cy="113.4" r="2"/>
+                        </g>
+                    </g>
+
+                    <!-- LAYER 4 · the Cosmo core. It does not turn; it breathes. -->
+                    <g class="cosmo">
+                        <circle cx="200" cy="200" r="46" fill="currentColor" opacity=".08" stroke="none"/>
+                        <circle cx="200" cy="200" r="26" stroke-width="1" opacity=".7"/>
+                        <path d="M200 180 L204 196 L220 200 L204 204 L200 220 L196 204 L180 200 L196 196 Z"
+                              fill="currentColor" stroke="none" opacity=".9"/>
+                    </g>
+                </svg>
+            </div>
+            <p class="splash-wordmark">IRONVOW</p>
+            <p class="splash-tagline">Kindling your Cosmo</p>
+        </div>
+
         <main class="app">
 
             <!-- ── Identity + Cosmo bar ── -->
@@ -25,7 +231,12 @@
                 <div class="resume-head">
                     <div class="identity">
                         <span class="kicker">Saint</span>
-                        <h3 id="nameTag">— Loading —</h3>
+                        <!-- #nameHouse is filled by index.js with the zodiac
+                             badge, and stays empty while no house is held. -->
+                        <div class="name-line">
+                            <h3 id="nameTag">— Loading —</h3>
+                            <span id="nameHouse" class="name-house"></span>
+                        </div>
                     </div>
 
                     <div class="rank-block">
@@ -96,20 +307,9 @@
 
         </main><!-- .app -->
 
-        <!-- ── Rebuke / Ascension modal ── -->
-        <div id="overlay" style="display:none;"></div>
-        <div id="info" style="display:none;">
-            <div class="banner">
-                <div class="alert">
-                    <svg width="16" height="16" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-                        <circle cx="16" cy="16" r="13.5" fill="none" stroke="currentColor" stroke-width="1.3"/>
-                        <path d="M16 8l2.2 5.4L24 15l-4.4 3.3 1.6 5.7L16 20.8l-5.2 3.2 1.6-5.7L8 15l5.8-1.6L16 8z" fill="currentColor"/>
-                    </svg>
-                    <h2>Alert</h2>
-                </div>
-                <p></p>
-            </div>
-        </div>
+        <!-- Rebuke and Ascension are no longer modals. They are omens, raised
+             onto the toast stack that src/omens.ts creates on demand — which is
+             why there is no markup for them here. -->
 
         <!-- ── Footer nav ── -->
         <footer>
@@ -167,10 +367,15 @@
         </div>
 
         <script src="cordova.js"></script>
+        <!-- Must precede index.js: it calls hideSplash() when the boot chain lands -->
+        <script src="js/splash.js"></script>
         <script src="js/shared.js"></script>
         <script src="js/namefilter.js"></script>
         <script src="js/daylog.js"></script>
         <script src="js/notifications.js"></script>
+        <!-- Must precede index.js: it raises omens for Ascension, Rebuke,
+             level-up and streak milestones. -->
+        <script src="js/omens.js"></script>
         <script src="js/index.js"></script>
         <script src="js/sigil.js"></script>
     </body>

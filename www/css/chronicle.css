@@ -4,12 +4,23 @@
    query here — every colour is a var(--…) declared in theme.css.
    ═══════════════════════════════════════════════════════════════════ */
 
+/* Side gutters match the other pages (14px), so the calendar and the Omens log
+   no longer sit flush against the screen edges. The bottom value clears the
+   fixed footer nav — it is the page's job, not each card's. */
+main.app {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 14px 100px;
+  max-height: 100vh;
+  overflow-y: auto;
+}
+
 .chronicle-card {
   padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-bottom: 90px;
 }
 
 #streakLine {
@@ -33,6 +44,23 @@
 }
 
 .month-head h2 {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fg);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* The Omens log header. Rows themselves are styled in omens.css, shared with
+   the toast presentation so a kind reads the same in both places. */
+.omen-head {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.omen-head h2 {
   font-family: var(--font-display);
   font-size: 13px;
   font-weight: 700;

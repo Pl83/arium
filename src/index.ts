@@ -27,6 +27,9 @@ function onDeviceReady(): void {
     }
   }, err => {
     console.error('DB Error', err);
+    // The boot chain below will never run. Lift the sigil rather than leaving
+    // the user staring at it until the failsafe fires.
+    hideSplash();
   }, () => {
     initNotifications(() => {
       maybeShowNameSetup(() => {
@@ -35,7 +38,9 @@ function onDeviceReady(): void {
           seedInitialObjectives(() => {
             refreshLevelBar();
             updateNameTag();
-            init();
+            // Dismissed from init's completion callback, not after it returns:
+            // init renders from a DB transaction, so returning proves nothing.
+            init(hideSplash);
           });
         });
       });
@@ -54,6 +59,10 @@ function maybeShowNameSetup(callback: () => void): void {
   const input   = document.getElementById('name-setup-input') as HTMLInputElement;
   const btn     = document.getElementById('name-setup-btn') as HTMLButtonElement;
   const error   = document.getElementById('name-setup-error') as HTMLElement;
+
+  // First run: the chain now stalls here until the Saint names themselves, so
+  // the sigil has to lift now or it would cover the registration card.
+  hideSplash();
 
   overlay.style.display = 'flex';
   input.focus();
@@ -160,50 +169,34 @@ function recordClosedDays(total: number, done: number): void {
   backfillGap(db, lastKey, todayKey, total);
 }
 
+// Streaks worth announcing. A milestone at every single day would make the
+// notification meaningless by the second week.
+const STREAK_MILESTONES = [7, 30, 100];
+
 function applyStreakAndPenalty(total: number, done: number): void {
   if (total === 0) return;
   const streak = parseInt(localStorage.getItem('streak') || '0', 10);
   if (done === total) {
-    localStorage.setItem('streak', String(streak + 1));
+    const next = streak + 1;
+    localStorage.setItem('streak', String(next));
+    if (STREAK_MILESTONES.indexOf(next) !== -1) {
+      raiseOmen({
+        kind:  'streak',
+        title: 'Unbroken',
+        body:  next + ' days without fail. The Sanctuary takes note.',
+      });
+    }
   } else {
     const missed  = total - done;
     const penalty = missed * XP_PENALTY_PER_MISS;
     localStorage.setItem('totalXP', String(Math.max(0, getTotalXP() - penalty)));
     localStorage.setItem('streak', '0');
-    setTimeout(() => showPenaltyModal(missed, penalty), 200);
+    raiseOmen({
+      kind:  'rebuke',
+      title: 'Rebuke',
+      body:  missed + ' ordeal' + (missed > 1 ? 's' : '') + ' unfinished yesterday. −' + penalty + ' Cosmo. Streak reset.',
+    });
   }
-}
-
-function showPenaltyModal(missed: number, penalty: number): void {
-  const overlay = document.getElementById('overlay') as HTMLElement;
-  const info = document.getElementById('info') as HTMLElement;
-  (info.querySelector('.banner .alert h2') as HTMLElement).textContent = 'Rebuke';
-  const p = info.querySelector('.banner p') as HTMLElement;
-  p.textContent = missed + ' ordeal' + (missed > 1 ? 's' : '') + ' unfinished yesterday. −' + penalty + ' Cosmo. Streak reset.';
-  p.className = 'failure';
-  overlay.style.display = 'block';
-  info.style.display = 'block';
-  overlay.addEventListener('click', () => {
-    overlay.style.display = 'none';
-    info.style.display = 'none';
-  }, { once: true });
-}
-
-function showRankUpModal(rank: RankEntry): void {
-  const overlay = document.getElementById('overlay') as HTMLElement;
-  const info = document.getElementById('info') as HTMLElement;
-  (info.querySelector('.banner .alert h2') as HTMLElement).textContent = 'Ascension';
-  const p = info.querySelector('.banner p') as HTMLElement;
-  p.textContent = rank.rank + '-Rank · ' + rank.title + '. The Sanctuary acknowledges your Cosmo.';
-  p.className = 'goldy';
-  info.classList.add('rank-up');
-  overlay.style.display = 'block';
-  info.style.display = 'block';
-  overlay.addEventListener('click', () => {
-    overlay.style.display = 'none';
-    info.style.display = 'none';
-    info.classList.remove('rank-up');
-  }, { once: true });
 }
 
 function resetObjectives(callback: () => void): void {
@@ -229,6 +222,12 @@ function resetObjectives(callback: () => void): void {
 function seedInitialObjectives(callback?: () => void): void {
   const level = getLevel(getTotalXP());
   db.transaction(tx => {
+    // Installs seeded before the swap carry a 'Stretch' row; rename it so the
+    // daily reset (which matches on goal name) can keep it in sync.
+    const jacks = GOAL_CONFIG.find(cfg => cfg.name === 'Jumping Jacks');
+    if (jacks) {
+      tx.executeSql('UPDATE objectives SET title = ? WHERE title LIKE ?', [goalTitle(jacks, level), 'Stretch%']);
+    }
     tx.executeSql('SELECT COUNT(*) as count FROM objectives', [], (tx, res) => {
       if ((res.rows.item(0) as { count: number }).count === 0) {
         GOAL_CONFIG.forEach(cfg => {
@@ -269,6 +268,7 @@ function refreshLevelBar(): void {
 function updateNameTag(): void {
   const rank = getRank(getLevel(getTotalXP()));
   (document.getElementById('nameTag') as HTMLElement).textContent = getPlayerName();
+  renderNameHouse();
 
   const rankClass = 'rank-' + rank.rank.toLowerCase();
 
@@ -311,7 +311,9 @@ interface ObjectiveRow {
   completed: number;
 }
 
-function init(): void {
+// `done` fires once the ordeal list is fully in the DOM. The opening sigil
+// waits on it, so it must not be hoisted any earlier than the last append.
+function init(done?: () => void): void {
   const list = document.querySelector('.center ul') as HTMLUListElement;
   list.innerHTML = '';
 
@@ -371,12 +373,27 @@ function init(): void {
             const bar = document.getElementById('levelProgress') as HTMLElement;
 
             if (xpDelta > 0 && getLevel(newXP) > getLevel(oldXP)) {
+              const newLevel = getLevel(newXP);
               animateBar(oldProgress, 100, () => {
                 bar.style.width = '0%';
                 setLevelLabel(newXP);
                 animateBar(0, newProgress, () => {
-                  if (getRank(getLevel(newXP)).rank !== getRank(getLevel(oldXP)).rank) {
-                    showRankUpModal(getRank(getLevel(newXP)));
+                  // Raised after the bar has finished refilling, so the
+                  // announcement lands on the level the player can already see.
+                  raiseOmen({
+                    kind:  'levelup',
+                    title: 'Level Reached',
+                    body:  'Level ' + newLevel + '. Your Cosmo burns brighter.',
+                  });
+                  // A rank change rides on top of the level-up rather than
+                  // replacing it — both are true, and both now fit on screen.
+                  const newRank = getRank(newLevel);
+                  if (newRank.rank !== getRank(getLevel(oldXP)).rank) {
+                    raiseOmen({
+                      kind:  'ascension',
+                      title: 'Ascension',
+                      body:  newRank.rank + '-Rank · ' + newRank.title + '. The Sanctuary acknowledges your Cosmo.',
+                    });
                   }
                 });
               });
@@ -403,6 +420,8 @@ function init(): void {
       } else {
         popup.classList.remove('quest-complete');
       }
+
+      if (done) done();
     });
   });
 }
@@ -418,8 +437,7 @@ if (typeof module !== 'undefined') {
   global.checkYesterdayCompletion = checkYesterdayCompletion;
   global.recordClosedDays         = recordClosedDays;
   global.applyStreakAndPenalty    = applyStreakAndPenalty;
-  global.showPenaltyModal         = showPenaltyModal;
-  global.showRankUpModal          = showRankUpModal;
+  global.STREAK_MILESTONES        = STREAK_MILESTONES;
   global.resetObjectives          = resetObjectives;
   global.seedInitialObjectives    = seedInitialObjectives;
   global.refreshLevelBar          = refreshLevelBar;
@@ -428,7 +446,7 @@ if (typeof module !== 'undefined') {
   global.init                     = init;
   module.exports = {
     onDeviceReady, maybeShowNameSetup, handleDailyReset, migrateLastOpenedISO, checkYesterdayCompletion, recordClosedDays, applyStreakAndPenalty,
-    showPenaltyModal, showRankUpModal, resetObjectives, seedInitialObjectives,
-    refreshLevelBar, updateNameTag, animateBar, init,
+    resetObjectives, seedInitialObjectives,
+    refreshLevelBar, updateNameTag, animateBar, init, STREAK_MILESTONES,
   };
 }

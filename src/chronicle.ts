@@ -195,7 +195,17 @@ function renderStreakLine(rows: DayRow[]): void {
     '  ·  ' + total + ' day' + (total === 1 ? '' : 's') + ' trained total';
 }
 
+// Deliberately outside initChronicle's sqlitePlugin guard: omens live in
+// localStorage, so the log must still render on a build where the database
+// plugin is absent and the calendar above it cannot.
+function initOmenLog(): void {
+  const host = document.getElementById('omenLog');
+  if (!host) return;
+  renderOmenLog(host, Date.now());
+}
+
 function initChronicle(): void {
+  initOmenLog();
   if (!window.sqlitePlugin) return;
   chronicleDb = window.sqlitePlugin.openDatabase({ name: 'fitness.db', location: 'default' });
   chronicleDb.transaction(tx => createDayLogTable(tx));
@@ -232,10 +242,12 @@ if (typeof module !== 'undefined') {
   global.loadMonth          = loadMonth;
   global.shiftMonth         = shiftMonth;
   global.renderStreakLine   = renderStreakLine;
+  global.initOmenLog        = initOmenLog;
   global.initChronicle      = initChronicle;
   module.exports = {
     WEEKDAY_LABELS, MONTH_LABELS, isFullDay, cellState, monthGrid, longestStreak,
     isTrainedDay, monthSummary, trainedDaysTotal,
-    renderMonth, showDayDetail, monthOrdinal, clampMonthNav, loadMonth, shiftMonth, renderStreakLine, initChronicle,
+    renderMonth, showDayDetail, monthOrdinal, clampMonthNav, loadMonth, shiftMonth, renderStreakLine,
+    initOmenLog, initChronicle,
   };
 }

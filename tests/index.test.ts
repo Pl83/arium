@@ -6,15 +6,9 @@ const INDEX_DOM = `
   <div id="levelProgress" style="width:0%"></div>
   <span id="levelLabel">Lv.1 — 0% Cosmo</span>
   <div id="nameTag"></div>
+  <span id="nameHouse"></span>
   <span id="rankTitle" class="rank-letter rank-e"></span>
   <svg id="rankMedallion" class="rank-medallion rank-letter rank-e"><text id="rankGlyph"></text></svg>
-  <div id="overlay" style="display:none;"></div>
-  <div id="info" style="display:none;">
-    <div class="banner">
-      <div class="alert"><h2>Alert</h2></div>
-      <p></p>
-    </div>
-  </div>
   <div id="name-setup" style="display:none;">
     <input id="name-setup-input" type="text">
     <p id="name-setup-error" hidden></p>
@@ -41,6 +35,16 @@ beforeEach(() => {
   require('../src/daylog');
   // notifications.ts must load before index.ts (mirrors browser script order)
   require('../src/notifications');
+  // houses.ts before splash.ts, as in index.html: renderNameHouse() lives in
+  // splash.ts and reads the stored house from houses.ts.
+  require('../src/houses');
+  // splash.ts must load before index.ts — index.ts calls hideSplash() at the
+  // end of the boot chain and on the DB error path, and updateNameTag() paints
+  // the house badge through renderNameHouse().
+  require('../src/splash');
+  // omens.ts must load before index.ts — index.ts raises Rebuke, level-up,
+  // Ascension and streak omens.
+  require('../src/omens');
   require('../src/index');
 });
 
@@ -246,48 +250,59 @@ describe('applyStreakAndPenalty', () => {
     expect(localStorage.getItem('totalXP')).toBe('0');
   });
 
-  it('shows the penalty modal after 200 ms', () => {
+  // The penalty modal is gone; the Rebuke is an omen now, raised synchronously
+  // rather than behind a 200ms timer.
+  it('raises a Rebuke omen naming the misses and the penalty', () => {
     localStorage.setItem('totalXP', '100');
     (global as any).applyStreakAndPenalty(4, 2);
-    jest.advanceTimersByTime(200);
-    const p = document.querySelector('#info .banner p');
-    expect(p.textContent).toContain('2 ordeals unfinished');
-    expect(p.textContent).toContain('−30 Cosmo');
+
+    const log = (global as any).readOmens();
+    expect(log).toHaveLength(1);
+    expect(log[0].k).toBe('rebuke');
+    expect(log[0].b).toContain('2 ordeals unfinished');
+    expect(log[0].b).toContain('−30 Cosmo');
+  });
+
+  it('uses the singular when a single ordeal was missed', () => {
+    localStorage.setItem('totalXP', '100');
+    (global as any).applyStreakAndPenalty(4, 3);
+    expect((global as any).readOmens()[0].b).toContain('1 ordeal unfinished');
+  });
+
+  it('raises no omen when the day was completed', () => {
+    (global as any).applyStreakAndPenalty(4, 4);
+    expect((global as any).readOmens()).toHaveLength(0);
   });
 });
 
-// ── showPenaltyModal ──────────────────────────────────────────────────────────
+// ── Streak milestones ─────────────────────────────────────────────────────────
 
-describe('showPenaltyModal', () => {
-  it('makes overlay and info panel visible', () => {
-    (global as any).showPenaltyModal(1, 15);
-    expect(document.getElementById('overlay').style.display).toBe('block');
-    expect(document.getElementById('info').style.display).toBe('block');
+describe('streak milestones', () => {
+  it('raises an Unbroken omen when the streak reaches 7', () => {
+    localStorage.setItem('streak', '6');
+    (global as any).applyStreakAndPenalty(4, 4);
+
+    const log = (global as any).readOmens();
+    expect(log).toHaveLength(1);
+    expect(log[0].k).toBe('streak');
+    expect(log[0].b).toContain('7 days');
   });
 
-  it('uses singular "objective" when missed = 1', () => {
-    (global as any).showPenaltyModal(1, 15);
-    expect(document.querySelector('#info .banner p').textContent)
-      .toContain('1 ordeal unfinished');
+  it('raises nothing on an ordinary day between milestones', () => {
+    localStorage.setItem('streak', '7');
+    (global as any).applyStreakAndPenalty(4, 4);
+    expect(localStorage.getItem('streak')).toBe('8');
+    expect((global as any).readOmens()).toHaveLength(0);
   });
 
-  it('uses plural "objectives" when missed > 1', () => {
-    (global as any).showPenaltyModal(3, 45);
-    expect(document.querySelector('#info .banner p').textContent)
-      .toContain('3 ordeals unfinished');
-  });
-
-  it('shows the correct Cosmo penalty in the message', () => {
-    (global as any).showPenaltyModal(2, 30);
-    expect(document.querySelector('#info .banner p').textContent)
-      .toContain('−30 Cosmo');
-  });
-
-  it('dismisses on overlay click', () => {
-    (global as any).showPenaltyModal(1, 15);
-    document.getElementById('overlay').click();
-    expect(document.getElementById('overlay').style.display).toBe('none');
-    expect(document.getElementById('info').style.display).toBe('none');
+  it('fires at every configured milestone and nowhere else', () => {
+    const milestones = (global as any).STREAK_MILESTONES as number[];
+    milestones.forEach(m => {
+      localStorage.removeItem('omens');
+      localStorage.setItem('streak', String(m - 1));
+      (global as any).applyStreakAndPenalty(4, 4);
+      expect((global as any).readOmens()).toHaveLength(1);
+    });
   });
 });
 
@@ -350,6 +365,20 @@ describe('updateNameTag', () => {
     (global as any).updateNameTag();
     expect(document.getElementById('rankGlyph').textContent).toBe('E');
     expect(document.getElementById('rankTitle').textContent).toBe('Aspirant');
+  });
+
+  it('wears the held house beside the name', () => {
+    localStorage.setItem('house', 'taurus');
+    (global as any).updateNameTag();
+
+    const badge = document.querySelector('#nameHouse .house-badge');
+    expect(badge).not.toBeNull();
+    expect(badge.getAttribute('aria-label')).toBe('House of Taurus');
+  });
+
+  it('leaves the badge slot empty when no house is held', () => {
+    (global as any).updateNameTag();
+    expect(document.getElementById('nameHouse').innerHTML).toBe('');
   });
 });
 
@@ -555,35 +584,60 @@ describe('init', () => {
   });
 });
 
-// ── showRankUpModal ───────────────────────────────────────────────────────────
+// ── Level-up and Ascension omens ──────────────────────────────────────────────
+//
+// Both are raised from the ordeal click handler, after the Cosmo bar has
+// finished refilling — so the announcement lands on a level the player can
+// already see. That means these must run the bar animation out.
 
-describe('showRankUpModal', () => {
-  const dRank = { rank: 'D', title: 'Apprentice', minLevel: 5 };
+describe('level-up and ascension omens', () => {
+  // Enough Cosmo that completing one ordeal crosses into level 2.
+  function clickThroughLevelUp(startXP: number): void {
+    localStorage.setItem('totalXP', String(startXP));
+    const { mockDb } = createSQLiteMock({
+      rows: [{ id: 1, title: 'Push-Ups [0/20]', completed: 0 }],
+    });
+    (global as any)._setDb(mockDb);
+    (global as any).init();
+    (document.querySelector('.center ul li') as HTMLElement).click();
+    // animateBar ticks a setInterval every 10ms and the level-up path runs two
+    // passes back to back, so the omen only lands after ~200 ticks. Advance
+    // well past both rather than draining pending timers once.
+    jest.advanceTimersByTime(5000);
+  }
 
-  it('shows the overlay and info modal', () => {
-    (global as any).showRankUpModal(dRank);
-    expect(document.getElementById('overlay').style.display).toBe('block');
-    expect(document.getElementById('info').style.display).toBe('block');
+  it('raises a level omen when the level rises', () => {
+    clickThroughLevelUp(95);
+    const kinds = (global as any).readOmens().map((o: any) => o.k);
+    expect(kinds).toContain('levelup');
   });
 
-  it('adds rank-up class to #info', () => {
-    (global as any).showRankUpModal(dRank);
-    expect(document.getElementById('info').classList.contains('rank-up')).toBe(true);
+  it('raises no omen when the level does not rise', () => {
+    clickThroughLevelUp(0);
+    const kinds = (global as any).readOmens().map((o: any) => o.k);
+    expect(kinds).not.toContain('levelup');
+    expect(kinds).not.toContain('ascension');
   });
 
-  it('sets the paragraph text with the rank details', () => {
-    (global as any).showRankUpModal(dRank);
-    const p = document.querySelector('#info .banner p') as HTMLElement;
-    expect(p.textContent).toContain('D-Rank');
-    expect(p.textContent).toContain('Apprentice');
+  // The old modals shared one element, so a level-up that also crossed a rank
+  // boundary could only ever show one of the two. Omens must show both.
+  it('raises the level omen AND the ascension when a rank boundary is crossed', () => {
+    // Level 4 → 5 is the D-rank boundary in RANKS.
+    const xpForLevel5 = (global as any).xpToLevel(5);
+    clickThroughLevelUp(xpForLevel5 - 5);
+
+    const kinds = (global as any).readOmens().map((o: any) => o.k);
+    expect(kinds).toContain('levelup');
+    expect(kinds).toContain('ascension');
   });
 
-  it('hides modal and removes rank-up class on overlay click', () => {
-    (global as any).showRankUpModal(dRank);
-    document.getElementById('overlay').click();
-    expect(document.getElementById('overlay').style.display).toBe('none');
-    expect(document.getElementById('info').style.display).toBe('none');
-    expect(document.getElementById('info').classList.contains('rank-up')).toBe(false);
+  it('names the rank and title in the ascension body', () => {
+    const xpForLevel5 = (global as any).xpToLevel(5);
+    clickThroughLevelUp(xpForLevel5 - 5);
+
+    const ascension = (global as any).readOmens().find((o: any) => o.k === 'ascension');
+    expect(ascension.b).toContain('D-Rank');
+    expect(ascension.b).toContain('Bronze Saint');
   });
 });
 

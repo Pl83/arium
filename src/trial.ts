@@ -40,7 +40,7 @@ const SOLO_EXERCISES: Exercise[] = [
   { name: 'Lunges',       type: 'reps', scale: { base: 15, step: 2, cap: 55 }, step: 2,  min: 6,  stat: 'power'    },
   { name: 'Dips',         type: 'reps', scale: { base: 10, step: 1, cap: 35 }, step: 1,  min: 5,  stat: 'strength' },
   { name: 'Mt. Climbers',   type: 'time', scale: { base: 20, step: 3, cap: 75 }, step: 5,  min: 10, stat: 'endurance' },
-  { name: 'Stretch',        type: 'time', cfgIdx: 4,                             step: 15, min: 30, stat: 'agility'   },
+  { name: 'Stretch',        type: 'time', scale: { base: 60, step: 5, cap: 180 }, step: 15, min: 30, stat: 'agility'   },
   { name: 'Toe Touches',    type: 'reps', scale: { base: 15, step: 2, cap: 50 }, step: 2,  min: 8,  stat: 'agility'   },
   { name: 'Hip Flexor Hold',type: 'time', scale: { base: 20, step: 3, cap: 90 }, step: 5,  min: 15, stat: 'agility'   },
 ];
@@ -86,7 +86,7 @@ const CHALLENGES: Challenge[] = [
     name: 'Flexibility Flow',
     stat: 'agility',
     exercises: [
-      { name: 'Stretch',         type: 'time', cfgIdx: 4,                                stat: 'agility' },
+      { name: 'Stretch',         type: 'time', scale: { base: 60, step: 5, cap: 180 },    stat: 'agility' },
       { name: 'Hip Flexor Hold', type: 'time', scale: { base: 20, step: 3, cap: 90 },    stat: 'agility' },
       { name: 'Toe Touches',     type: 'reps', scale: { base: 15, step: 2, cap: 50 },    stat: 'agility' },
     ],

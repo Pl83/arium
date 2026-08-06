@@ -9,4 +9,21 @@
     <content src="index.html" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
+    <platform name="android">
+        <!-- Cordova's stock cdv_background_color is #FAF8FF, and on API 34+ it
+             follows Material You. Either way the surface shown before the WebView
+             paints is near-white, which is the flash between the launcher and the
+             opening sigil. These four files replace it with the app's own ground.
+             They also drive the Android 12+ system splash, since Cordova points
+             windowSplashScreenBackground at the same colour. -->
+        <resource-file src="res/android/values/cdv_colors.xml" target="app/src/main/res/values/cdv_colors.xml" />
+        <resource-file src="res/android/values-night/cdv_colors.xml" target="app/src/main/res/values-night/cdv_colors.xml" />
+        <resource-file src="res/android/values-v34/cdv_colors.xml" target="app/src/main/res/values-v34/cdv_colors.xml" />
+        <resource-file src="res/android/values-night-v34/cdv_colors.xml" target="app/src/main/res/values-night-v34/cdv_colors.xml" />
+        <!-- Without this, cordova-android leaves windowSplashScreenAnimatedIcon
+             pointing at its own drawable/ic_cdv_splashscreen.xml — the Cordova
+             hardhat robot, shown before the app's own opening. Overriding
+             cdv_colors.xml above only ever changed the ground behind it. -->
+        <preference name="AndroidWindowSplashScreenAnimatedIcon" value="res/android/splash/ic_splash_sigil.xml" />
+    </platform>
 </widget>

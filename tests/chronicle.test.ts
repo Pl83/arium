@@ -6,6 +6,9 @@ beforeEach(() => {
   jest.resetModules();
   require('../src/shared');
   require('../src/daylog');
+  // omens.ts must load before chronicle.ts (mirrors script order in
+  // chronicle.html) — the Omens section renders through renderOmenLog.
+  require('../src/omens');
   require('../src/chronicle');
 });
 
@@ -395,5 +398,43 @@ describe('initChronicle / month navigation', () => {
 
     (global as any).shiftMonth(-1);
     expect((document.getElementById('prevMonth') as HTMLButtonElement).disabled).toBe(true);
+  });
+});
+
+// ── Omens section ─────────────────────────────────────────────────────────────
+
+describe('initOmenLog', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="omenLog"></div>';
+  });
+
+  it('states the empty case', () => {
+    (global as any).initOmenLog();
+    expect(document.querySelector('#omenLog .omen-empty')).not.toBeNull();
+  });
+
+  it('renders the stored omens newest first', () => {
+    (global as any).raiseOmen({ kind: 'levelup', title: 'Older', body: 'a' });
+    (global as any).raiseOmen({ kind: 'rebuke',  title: 'Newer', body: 'b' });
+
+    (global as any).initOmenLog();
+    const titles = Array.from(document.querySelectorAll('#omenLog .omen-title'))
+      .map(el => el.textContent);
+    expect(titles).toEqual(['Newer', 'Older']);
+  });
+
+  it('does nothing on a page without the section', () => {
+    document.body.innerHTML = '';
+    expect(() => (global as any).initOmenLog()).not.toThrow();
+  });
+
+  // Omens live in localStorage, so the log must survive a build where the
+  // database plugin is missing and the calendar above it cannot render.
+  it('renders even when the sqlite plugin is absent', () => {
+    delete (window as any).sqlitePlugin;
+    (global as any).raiseOmen({ kind: 'house', title: 'House Claimed', body: 'Leo' });
+
+    (global as any).initChronicle();
+    expect(document.querySelectorAll('#omenLog .omen-row')).toHaveLength(1);
   });
 });

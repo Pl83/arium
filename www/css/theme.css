@@ -44,6 +44,10 @@
   --lt-gold-ink:    #2A1500;
   --lt-gold-halo:   rgba(169,120,30,0.15);
 
+  /* Marble's gold sits far closer to its ground than Sanctuary Dark's does, so
+     the unchosen glyphs need much more of it to survive. See --sigil-dim. */
+  --lt-sigil-dim:   0.7;
+
   --lt-violet:        #6E50C9;
   --lt-violet-bright: #7A5BD6;
   --lt-violet-soft:   rgba(110,80,201,0.12);
@@ -103,6 +107,15 @@
   --gold-faint:  rgba(232,193,96,0.08);
   --gold-ink:    #241000;              /* text drawn on top of a gold fill */
   --gold-halo:   rgba(232,193,96,0.20);
+
+  /* How far the ELEVEN unchosen zodiac glyphs fade once a house is held.
+     A palette value, not a layout one: the readable floor depends entirely on
+     how far the gold sits from the ground, which is what a palette decides.
+     `.house-ring` already carries opacity .9, so the glyph lands at 0.9× this.
+     Emphasis on the chosen house comes from scale and halo — do not buy more
+     of it by driving this down, or the ring vanishes. tests/splash.test.ts
+     holds both palettes to a 2:1 floor. */
+  --sigil-dim:   0.36;
 
   /* ── Violet: demoted to a tint ── */
   --violet:        #A28BF7;
@@ -177,6 +190,7 @@
     --gold-faint:  var(--lt-gold-faint);
     --gold-ink:    var(--lt-gold-ink);
     --gold-halo:   var(--lt-gold-halo);
+    --sigil-dim:   var(--lt-sigil-dim);
     --violet:        var(--lt-violet);
     --violet-bright: var(--lt-violet-bright);
     --violet-soft:   var(--lt-violet-soft);
@@ -222,6 +236,7 @@
   --gold-faint:  var(--lt-gold-faint);
   --gold-ink:    var(--lt-gold-ink);
   --gold-halo:   var(--lt-gold-halo);
+  --sigil-dim:   var(--lt-sigil-dim);
   --violet:        var(--lt-violet);
   --violet-bright: var(--lt-violet-bright);
   --violet-soft:   var(--lt-violet-soft);
@@ -344,8 +359,7 @@ main {
 .challenge-card,
 .complete-card,
 .chronicle-card,
-.day-detail,
-#info {
+.day-detail {
   position: relative;
   isolation: isolate;
   background: var(--panel-bg);
@@ -367,8 +381,7 @@ main {
 .profile-card::before,
 .stats-card::before,
 .complete-card::before,
-.chronicle-card::before,
-#info::before {
+.chronicle-card::before {
   content: '';
   position: absolute;
   inset: 6px;
@@ -607,3 +620,35 @@ footer nav a:active { color: var(--gold); }
 }
 
 .name-error[hidden] { display: none; }
+
+/* ── House badge ──────────────────────────────────────────────────────────
+   The zodiac mark worn beside a player's name, on the home header, the profile
+   card and every leaderboard row. Built by houseGlyphSvg() in splash.ts.
+
+   Sized in `em` so one rule serves all three, each of which sets a different
+   name font-size. The host span collapses to nothing when no house is held —
+   there must be no reserved gap where a badge would have gone. */
+
+.name-house {
+  display: inline-flex;
+  align-items: center;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+
+.name-house:empty { display: none; }
+
+.house-badge {
+  width: 1.05em;
+  height: 1.05em;
+  display: block;
+  opacity: 0.85;
+}
+
+/* Keeps the name and its badge on one line while the kicker above stays put. */
+.name-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}

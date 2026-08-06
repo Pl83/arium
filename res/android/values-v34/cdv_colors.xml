@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 14+ (API 34) variant. Cordova points this at Material You's
+  @android:color/system_background_light, which on a light mode device is
+  near white, so the flash returns on new phones if this file is left alone.
+  Ironvow's palette wins over the system accent here, deliberately.
+-->
+<resources>
+    <color name="cdv_background_color">#F6F1E6</color>
+    <color name="cdv_splashscreen_background">@color/cdv_background_color</color>
+</resources>

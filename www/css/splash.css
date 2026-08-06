@@ -1,0 +1,222 @@
+/* ═══════════════════════════════════════════════════════════════════
+   IRONVOW — ZODIAC SIGIL LOADER
+
+   One animation engine, two consumers:
+     #splash        full-screen opening. Markup is inlined in index.html
+                    so it paints on the first frame; src/splash.ts only
+                    takes it down.
+     .sigil-loader  compact waiting state, injected by src/rankings.ts.
+
+   Every colour here comes from a theme.css token. Declare no palette
+   values in this file — the sigil must follow Sanctuary Dark / Marble
+   like everything else.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── The opening ──────────────────────────────────────────────────── */
+
+#splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.6rem;
+  background-color: var(--bg);
+  background-image: var(--bg-grad), var(--vignette);
+  opacity: 1;
+  transition: opacity 400ms ease;
+}
+
+/* Added by hideSplash(). pointer-events goes first so taps reach the app
+   the instant the fade begins rather than 400ms later. */
+#splash.splash-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Stamped on <html> by splashgate.js before the parser reaches #splash, on
+   every load after the first of an app session. The opening belongs to the
+   launch; coming back to Home from the footer nav must not replay it.
+   display:none rather than opacity so it costs no paint and eats no taps. */
+html.splash-seen #splash { display: none; }
+
+/* Faint starfield. Uses --fg-dim rather than a literal white so it stays
+   visible when Marble flips the ground to parchment. */
+#splash::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.7;
+  background:
+    radial-gradient(1.5px 1.5px at 20% 30%, var(--fg-dim), transparent),
+    radial-gradient(1.5px 1.5px at 80% 20%, var(--fg-dim), transparent),
+    radial-gradient(1px   1px   at 65% 70%, var(--fg-dim), transparent),
+    radial-gradient(1px   1px   at 35% 80%, var(--fg-dim), transparent),
+    radial-gradient(1.5px 1.5px at 90% 60%, var(--fg-dim), transparent),
+    radial-gradient(1px   1px   at 12% 65%, var(--fg-dim), transparent);
+}
+
+.splash-stage {
+  position: relative;
+  width: min(78vw, 340px);
+  aspect-ratio: 1;
+}
+
+.splash-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  color: var(--gold);
+  filter: drop-shadow(0 0 24px var(--gold-halo));
+}
+
+.splash-wordmark {
+  position: relative;
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 1.05rem;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;       /* centres the word despite the trailing gap */
+  color: var(--gold);
+  opacity: 0.85;
+}
+
+.splash-tagline {
+  position: relative;
+  margin-top: -1.1rem;
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+/* ── The compact loader ───────────────────────────────────────────── */
+
+.sigil-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 3rem 1rem;
+}
+
+/* 160px, not the 96px this started at. The loader carries the same twelve
+   zodiac glyphs as the opening, and below roughly this size they stop being
+   glyphs and become texture. If this shrinks again, drop the house ring from
+   sigilLoaderMarkup() rather than shipping an unreadable one. */
+.sigil-loader-svg {
+  width: 160px;
+  height: 160px;
+  color: var(--gold);
+  opacity: 0.85;
+  filter: drop-shadow(0 0 12px var(--gold-halo));
+}
+
+.sigil-loader-label {
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: var(--fg-muted);
+}
+
+/* ── The chosen house ─────────────────────────────────────────────── */
+
+/* Every rule below is gated on [data-house] existing on <html>. A player who
+   has never chosen has no attribute, nothing matches, and the sigil renders
+   exactly as it did before this feature existed.
+
+   CSS cannot compare one element's attribute against another's, so the pairing
+   of "house on <html>" to "slot on the wheel" is written out twelve times.
+   Dumb, but greppable and free of runtime style injection. */
+
+.house-emph {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 500ms ease;
+}
+
+/* A palette token, not a literal. The eleven unchosen glyphs are hairlines in
+   `currentColor`, and how far they may fade before they stop being glyphs
+   depends on how far that gold sits from the ground — which is a palette's
+   business, not this file's. A literal tuned on Sanctuary Dark's near-black
+   put the ring at 1.3:1 on Marble's parchment, which is to say gone. */
+[data-house] .house-slot {
+  opacity: var(--sigil-dim);
+  transition: opacity 500ms ease;
+}
+
+[data-house="aries"]       .house-slot[data-house="aries"],
+[data-house="taurus"]      .house-slot[data-house="taurus"],
+[data-house="gemini"]      .house-slot[data-house="gemini"],
+[data-house="cancer"]      .house-slot[data-house="cancer"],
+[data-house="leo"]         .house-slot[data-house="leo"],
+[data-house="virgo"]       .house-slot[data-house="virgo"],
+[data-house="libra"]       .house-slot[data-house="libra"],
+[data-house="scorpio"]     .house-slot[data-house="scorpio"],
+[data-house="sagittarius"] .house-slot[data-house="sagittarius"],
+[data-house="capricorn"]   .house-slot[data-house="capricorn"],
+[data-house="aquarius"]    .house-slot[data-house="aquarius"],
+[data-house="pisces"]      .house-slot[data-house="pisces"] {
+  opacity: 1;
+  filter: drop-shadow(0 0 6px var(--gold-halo));
+}
+
+[data-house="aries"]       .house-slot[data-house="aries"]       .house-emph,
+[data-house="taurus"]      .house-slot[data-house="taurus"]      .house-emph,
+[data-house="gemini"]      .house-slot[data-house="gemini"]      .house-emph,
+[data-house="cancer"]      .house-slot[data-house="cancer"]      .house-emph,
+[data-house="leo"]         .house-slot[data-house="leo"]         .house-emph,
+[data-house="virgo"]       .house-slot[data-house="virgo"]       .house-emph,
+[data-house="libra"]       .house-slot[data-house="libra"]       .house-emph,
+[data-house="scorpio"]     .house-slot[data-house="scorpio"]     .house-emph,
+[data-house="sagittarius"] .house-slot[data-house="sagittarius"] .house-emph,
+[data-house="capricorn"]   .house-slot[data-house="capricorn"]   .house-emph,
+[data-house="aquarius"]    .house-slot[data-house="aquarius"]    .house-emph,
+[data-house="pisces"]      .house-slot[data-house="pisces"]      .house-emph {
+  transform: scale(1.35);
+}
+
+/* ── The engine ───────────────────────────────────────────────────── */
+
+/* transform-box: view-box makes `center` resolve against the viewBox
+   rather than each group's own bounding box, so every ring turns about
+   the same axis instead of its own centre. */
+.ring {
+  transform-origin: center;
+  transform-box: view-box;
+}
+
+@keyframes sigil-spin { to { transform: rotate(360deg); } }
+
+/* Fast enough that a one-second wait still reads as motion — the 120s
+   drift of a meditative sigil would look frozen at this duration. */
+.ring.rim   { animation: sigil-spin  9s linear infinite; }
+.ring.wheel { animation: sigil-spin 22s linear infinite reverse; }
+.ring.star  { animation: sigil-spin 13s linear infinite; }
+
+/* The core does not turn. It breathes. */
+@keyframes sigil-cosmo {
+  0%, 100% { opacity: 0.45; transform: scale(1);    }
+  50%      { opacity: 0.9;  transform: scale(1.12); }
+}
+
+.cosmo {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: sigil-cosmo 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring,
+  .cosmo {
+    animation: none;
+  }
+  #splash { transition: none; }
+  /* The house emphasis stays — it is a state, not motion. Only its easing goes. */
+  .house-emph,
+  [data-house] .house-slot { transition: none; }
+}

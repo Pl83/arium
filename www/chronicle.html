@@ -11,6 +11,7 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="css/theme.css">
+        <link rel="stylesheet" href="css/omens.css">
         <link rel="stylesheet" href="css/chronicle.css">
         <!-- Applies the stored theme before first paint; must stay in <head> -->
         <script src="js/theme.js"></script>
@@ -32,6 +33,15 @@
                     <h3 id="detailDate"></h3>
                     <p id="detailBody"></p>
                 </div>
+            </section>
+
+            <!-- ── Omens ── -->
+            <section class="chronicle-card">
+                <div class="omen-head">
+                    <h2>Omens</h2>
+                </div>
+                <!-- populated by chronicle.js via renderOmenLog() -->
+                <div id="omenLog"></div>
             </section>
         </main>
 
@@ -72,6 +82,7 @@
         </footer>
 
         <script src="cordova.js"></script>
+        <script src="js/omens.js"></script>
         <script src="js/shared.js"></script>
         <script src="js/daylog.js"></script>
         <script src="js/chronicle.js"></script>

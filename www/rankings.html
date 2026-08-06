@@ -11,6 +11,7 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
         <link rel="stylesheet" href="css/theme.css">
+        <link rel="stylesheet" href="css/splash.css">
         <link rel="stylesheet" href="css/rankings.css">
         <!-- Applies the stored theme before first paint; must stay in <head> -->
         <script src="js/theme.js"></script>
@@ -23,7 +24,39 @@
                 <h1 class="rankings-title">Rankings</h1>
             </header>
             <div class="app">
-                <!-- populated by rankings.js -->
+                <!-- The waiting sigil is inlined so it paints on the first frame
+                     rather than after DOMContentLoaded. rankings.js re-renders an
+                     identical one when it starts the fetch, then replaces it with
+                     the standings. Keep in step with sigilLoaderMarkup() in
+                     src/splash.ts. -->
+                <div class="sigil-loader" role="status" aria-live="polite">
+                    <svg class="sigil-loader-svg" viewBox="0 0 400 400" fill="none" stroke="currentColor" aria-hidden="true">
+                        <g class="ring rim">
+                            <circle cx="200" cy="200" r="190" stroke-width="4" opacity=".35"/>
+                            <circle cx="200" cy="200" r="172" stroke-width="14" stroke-dasharray="6 46" opacity=".55"/>
+                        </g>
+                        <g class="ring wheel">
+                            <circle cx="200" cy="200" r="150" stroke-width="4" opacity=".45"/>
+                            <g stroke-width="5" opacity=".5">
+                                <line x1="200" y1="50" x2="200" y2="86" transform="rotate(15 200 200)"/>
+                                <line x1="200" y1="50" x2="200" y2="86" transform="rotate(75 200 200)"/>
+                                <line x1="200" y1="50" x2="200" y2="86" transform="rotate(135 200 200)"/>
+                                <line x1="200" y1="50" x2="200" y2="86" transform="rotate(195 200 200)"/>
+                                <line x1="200" y1="50" x2="200" y2="86" transform="rotate(255 200 200)"/>
+                                <line x1="200" y1="50" x2="200" y2="86" transform="rotate(315 200 200)"/>
+                            </g>
+                        </g>
+                        <g class="ring star">
+                            <path d="M200,100 250,286.6 113.4,150 300,200 113.4,250 250,113.4 200,300 150,113.4 286.6,250 100,200 286.6,150 150,286.6 Z"
+                                  stroke-width="3.5" opacity=".5" stroke-linejoin="round"/>
+                        </g>
+                        <g class="cosmo">
+                            <circle cx="200" cy="200" r="52" fill="currentColor" opacity=".1" stroke="none"/>
+                            <path d="M200 168 L207 193 L232 200 L207 207 L200 232 L193 207 L168 200 L193 193 Z" fill="currentColor" stroke="none" opacity=".9"/>
+                        </g>
+                    </svg>
+                    <p class="sigil-loader-label">Consulting the standings…</p>
+                </div>
             </div>
         </main>
 
@@ -63,6 +96,8 @@
             </nav>
         </footer>
 
+        <script src="js/houses.js"></script>
+        <script src="js/splash.js"></script>
         <script src="js/shared.js"></script>
         <script src="js/namefilter.js"></script>
         <script src="js/blocklist.js"></script>

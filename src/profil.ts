@@ -151,6 +151,7 @@ function render(): void {
 
   // Name
   (document.getElementById('nameTag') as HTMLElement).textContent = getPlayerName();
+  renderNameHouse();
 
   // Rank badge
   const rankLetterEl = document.getElementById('rankLetter') as HTMLElement;
@@ -187,12 +188,16 @@ function render(): void {
 // --- Editable name ---
 
 document.getElementById('editNameBtn')!.addEventListener('click', () => {
-  const nameTag = document.getElementById('nameTag') as HTMLElement;
-  const editBtn = document.getElementById('editNameBtn') as HTMLElement;
-  const current = getPlayerName();
+  const nameTag  = document.getElementById('nameTag') as HTMLElement;
+  const editBtn  = document.getElementById('editNameBtn') as HTMLElement;
+  // The badge is part of the name strip: it steps aside with the name while the
+  // input holds the row, and comes back with it.
+  const houseTag = document.getElementById('nameHouse') as HTMLElement;
+  const current  = getPlayerName();
 
   nameTag.style.display = 'none';
   editBtn.style.display = 'none';
+  houseTag.style.display = 'none';
 
   const input = document.createElement('input');
   input.type = 'text';
@@ -232,6 +237,7 @@ document.getElementById('editNameBtn')!.addEventListener('click', () => {
     nameTag.textContent = newName;
     nameTag.style.display = '';
     editBtn.style.display = '';
+    houseTag.style.display = '';
     input.remove();
     saveBtn.remove();
     error.remove();
@@ -269,6 +275,81 @@ function initThemeControl(): void {
   });
 
   markActive();
+}
+
+// --- Sanctuary › Your House ---
+
+// The house is cosmetic and stays cosmetic: this control writes one id and one
+// timestamp, and lights one glyph on the opening sigil. houses.ts owns the
+// rules; this only renders them and reports refusals.
+function initHouseControl(): void {
+  const grid = document.getElementById('houseGrid');
+  const hint = document.getElementById('houseHint');
+  if (!grid || !hint) return;
+
+  const NS = 'http://www.w3.org/2000/svg';
+
+  function glyph(id: string): SVGElement {
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('class', 'house-glyph');
+    svg.setAttribute('aria-hidden', 'true');
+    const use = document.createElementNS(NS, 'use');
+    // The defs live in profile.html, copied from index.html.
+    use.setAttribute('href', '#zg-' + id);
+    svg.appendChild(use);
+    return svg;
+  }
+
+  function render(): void {
+    const now      = Date.now();
+    const current  = getHouse();
+    const unlocked = canChangeHouse(now);
+
+    (grid as HTMLElement).innerHTML = '';
+
+    HOUSES.forEach(h => {
+      const held = h.id === current;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'house-btn' + (held ? ' active' : '');
+      btn.setAttribute('aria-pressed', String(held));
+      btn.setAttribute('aria-label', 'House of ' + h.name);
+      btn.title = 'House of ' + h.name;
+      // The held house is never disabled — greying out the one you own reads
+      // as having lost it. The others lock until the week is up.
+      btn.disabled = !unlocked && !held;
+      btn.appendChild(glyph(h.id));
+      btn.addEventListener('click', () => choose(h));
+      (grid as HTMLElement).appendChild(btn);
+    });
+
+    (hint as HTMLElement).textContent = current === null
+      ? 'Choose your house. A mark of allegiance, and nothing more.'
+      : 'House of ' + houseName(current) + ' · ' +
+        (unlocked ? 'You may choose again.' : houseCooldownLabel(now));
+  }
+
+  function choose(h: House): void {
+    // setHouse refuses a locked change or a re-pick of the house already held,
+    // and spends nothing when it refuses. Re-render either way so a stale
+    // cooldown label corrects itself on the tap.
+    if (!setHouse(h.id, Date.now())) {
+      render();
+      return;
+    }
+    render();
+    // The badge beside the name sits outside this control's grid, so it has to
+    // be told; without this it keeps the old glyph until the next navigation.
+    renderNameHouse();
+    raiseOmen({
+      kind:  'house',
+      title: 'House Claimed',
+      body:  'House of ' + h.name + '. Your glyph burns on the wheel.',
+    });
+  }
+
+  render();
 }
 
 // --- Danger zone › Delete Account ---
@@ -321,6 +402,7 @@ function initDeleteAccount(): void {
 
 render();
 initThemeControl();
+initHouseControl();
 initDeleteAccount();
 
 // === NODE/JEST EXPORT — invisible in browser ===
@@ -329,6 +411,10 @@ if (typeof module !== 'undefined') {
   global.render = render;
   global.renderRadarChart = renderRadarChart;
   global.initThemeControl  = initThemeControl;
+  global.initHouseControl  = initHouseControl;
   global.initDeleteAccount = initDeleteAccount;
-  module.exports = { render, renderRadarChart, initThemeControl, initDeleteAccount };
+  module.exports = {
+    render, renderRadarChart,
+    initThemeControl, initHouseControl, initDeleteAccount,
+  };
 }

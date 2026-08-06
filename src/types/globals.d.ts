@@ -85,6 +85,10 @@ interface PlayerRow {
   level: number;
   rank_letter: string;
   updated_at: string;
+  // Cosmetic zodiac house. OPTIONAL, and must stay optional: rows written by a
+  // build from before the column existed carry null, and a `rankingsCache` left
+  // on disk by such a build carries no key at all.
+  house?: string | null;
 }
 
 // ── Supabase config (set by www/js/supabase.config.js, gitignored) ─────────

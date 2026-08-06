@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Overrides Cordova's stock cdv_colors.xml. Copied over the generated file by
+  the resource-file entries in config.xml on every `cordova prepare`.
+
+  cdv_background_color is BOTH the Android 12+ system splash background and the
+  activity window background: the surface visible before the WebView paints.
+  Cordova ships #FAF8FF here, which is the white flash between the launcher and
+  the app. The values below are Marble's lt-bg and Sanctuary Dark's bg tokens
+  from www/css/theme.css; keep them in step with it.
+
+  Light lives here, dark in values-night/. The native layer cannot read the
+  stored theme, so it follows the OS, which is what the app's default "auto"
+  theme does anyway.
+
+  Note for editors: XML forbids a double hyphen inside a comment. Write token
+  names bare (bg, lt-bg), never with their CSS custom-property prefix, or
+  `cordova prepare` will fail to parse this file.
+-->
+<resources>
+    <color name="cdv_background_color">#F6F1E6</color>
+    <color name="cdv_splashscreen_background">@color/cdv_background_color</color>
+</resources>

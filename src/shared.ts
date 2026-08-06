@@ -27,7 +27,7 @@ const GOAL_CONFIG: GoalConfig[] = [
   { name: 'Sit-Ups',  base: 20, step: 2, cap: 100 },
   { name: 'Squats',   base: 20, step: 2, cap: 100 },
   { name: 'Plank',    base: 30, step: 5,  cap: 300 },
-  { name: 'Stretch',  base: 60, step: 5,  cap: 180 },
+  { name: 'Jumping Jacks', base: 30, step: 3, cap: 150 },
 ];
 
 function goalTarget(cfg: { base: number; step: number; cap: number }, level: number): number {
@@ -78,7 +78,8 @@ function statForTitle(title: string): StatKey | null {
   if (t.includes('sit'))   return 'core';
   if (t.includes('squat')) return 'power';
   if (t.includes('plank'))   return 'endurance';
-  if (t.includes('stretch')) return 'agility';
+  if (t.includes('jumping')) return 'agility';
+  if (t.includes('stretch')) return 'agility'; // legacy objective rows
   return null;
 }
 

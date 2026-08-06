@@ -4,6 +4,7 @@
 
 const PROFIL_DOM = `
   <span id="nameTag">Saint</span>
+  <span id="nameHouse"></span>
   <button id="editNameBtn">✎</button>
   <span id="rankLetter">E</span>
   <span id="rankTitle">Aspirant</span>
@@ -25,6 +26,8 @@ const PROFIL_DOM = `
     <button class="seg-btn" data-theme-choice="light">Light</button>
   </div>
   <svg id="radar-chart"></svg>
+  <div class="house-grid" id="houseGrid"></div>
+  <p class="seg-hint" id="houseHint"></p>
   <button id="deleteAccountBtn"></button>
   <div id="deleteConfirm" hidden>
     <button id="deleteCancelBtn"></button>
@@ -40,15 +43,37 @@ beforeEach(() => {
   jest.clearAllMocks();
   document.body.innerHTML = PROFIL_DOM;
   document.documentElement.removeAttribute('data-theme');
+  document.documentElement.removeAttribute('data-house');
   jest.resetModules();
   require('../src/theme');
   require('../src/shared');
+  // houses.ts and omens.ts must load before profil.ts (mirrors script order in
+  // profile.html) — the house picker reads one and raises omens through the other.
+  require('../src/houses');
+  // splash.ts must load after houses.ts and before profil.ts — it owns
+  // renderNameHouse(), which render() calls, and reads houses.ts to do it.
+  require('../src/splash');
+  require('../src/omens');
   profilModule = require('../src/profil');
 });
 
 // ── render ────────────────────────────────────────────────────────────────────
 
 describe('render', () => {
+  it('wears the held house beside the name', () => {
+    localStorage.setItem('house', 'libra');
+    profilModule.render();
+
+    const badge = document.querySelector('#nameHouse .house-badge');
+    expect(badge).not.toBeNull();
+    expect(badge!.getAttribute('aria-label')).toBe('House of Libra');
+  });
+
+  it('leaves the badge slot empty when no house is held', () => {
+    profilModule.render();
+    expect(document.getElementById('nameHouse')!.innerHTML).toBe('');
+  });
+
   it('displays the default player name when none stored', () => {
     profilModule.render();
     expect(document.getElementById('nameTag').textContent).toBe('Saint');
@@ -179,6 +204,16 @@ describe('editNameBtn', () => {
     expect(document.getElementById('editNameBtn').style.display).toBe('');
   });
 
+  // The badge is part of the name strip, so it steps aside with the name while
+  // the input occupies the row, and comes back with it.
+  it('stands the house badge down while editing and back up after saving', () => {
+    document.getElementById('editNameBtn').click();
+    expect(document.getElementById('nameHouse').style.display).toBe('none');
+
+    document.querySelector('.save-name-btn').click();
+    expect(document.getElementById('nameHouse').style.display).toBe('');
+  });
+
   it('saves the name on Enter key', () => {
     document.getElementById('editNameBtn').click();
     const input = document.querySelector('.name-input') as HTMLInputElement;
@@ -307,6 +342,133 @@ describe('initThemeControl', () => {
   it('does not throw when the control is absent from the page', () => {
     document.body.innerHTML = '<div id="themeControlMissing"></div>';
     expect(() => (global as any).initThemeControl()).not.toThrow();
+  });
+});
+
+// ── Sanctuary › Your House ────────────────────────────────────────────────────
+
+describe('initHouseControl', () => {
+  const WEEK = 7 * 24 * 60 * 60 * 1000;
+
+  const grid    = () => document.getElementById('houseGrid') as HTMLElement;
+  const hint    = () => document.getElementById('houseHint') as HTMLElement;
+  const buttons = () => Array.from(grid().querySelectorAll('button')) as HTMLButtonElement[];
+  const byHouse = (name: string) =>
+    buttons().find(b => b.getAttribute('aria-label') === 'House of ' + name) as HTMLButtonElement;
+
+  it('renders one button per house', () => {
+    profilModule.initHouseControl();
+    expect(buttons()).toHaveLength(12);
+  });
+
+  it('draws each button from the shared glyph library', () => {
+    profilModule.initHouseControl();
+    const use = byHouse('Leo').querySelector('use');
+    expect(use!.getAttribute('href')).toBe('#zg-leo');
+  });
+
+  it('invites a first choice when no house is held', () => {
+    profilModule.initHouseControl();
+    expect(hint().textContent).toContain('Choose your house');
+  });
+
+  it('stores the house and marks it pressed when chosen', () => {
+    profilModule.initHouseControl();
+    byHouse('Leo').click();
+
+    expect(localStorage.getItem('house')).toBe('leo');
+    expect(byHouse('Leo').getAttribute('aria-pressed')).toBe('true');
+    expect(byHouse('Leo').className).toContain('active');
+  });
+
+  it('lights the glyph on the sigil by stamping <html>', () => {
+    profilModule.initHouseControl();
+    byHouse('Virgo').click();
+    expect(document.documentElement.getAttribute('data-house')).toBe('virgo');
+  });
+
+  // The badge sits outside this control's grid, so a change here has to reach
+  // across the page for it. Without that it keeps the old glyph until the next
+  // navigation — invisible in a test that only inspects the picker.
+  it('repaints the badge beside the name when the house changes', () => {
+    profilModule.initHouseControl();
+    byHouse('Leo').click();
+
+    const badge = document.querySelector('#nameHouse .house-badge');
+    expect(badge).not.toBeNull();
+    expect(badge!.getAttribute('aria-label')).toBe('House of Leo');
+  });
+
+  it('raises a House Claimed omen', () => {
+    profilModule.initHouseControl();
+    byHouse('Pisces').click();
+
+    const log = (global as any).readOmens();
+    expect(log).toHaveLength(1);
+    expect(log[0].k).toBe('house');
+    expect(log[0].b).toContain('House of Pisces');
+  });
+
+  it('names the held house and the cooldown in the hint', () => {
+    localStorage.setItem('house', 'leo');
+    localStorage.setItem('houseChangedAt', String(Date.now()));
+    profilModule.initHouseControl();
+
+    expect(hint().textContent).toContain('House of Leo');
+    expect(hint().textContent).toContain('Choose again in');
+  });
+
+  it('locks every other house while the week runs', () => {
+    profilModule.initHouseControl();
+    byHouse('Leo').click();
+
+    expect(byHouse('Aries').disabled).toBe(true);
+    expect(byHouse('Taurus').disabled).toBe(true);
+  });
+
+  // Greying out the house you own would read as having lost it.
+  it('never disables the house already held', () => {
+    profilModule.initHouseControl();
+    byHouse('Leo').click();
+    expect(byHouse('Leo').disabled).toBe(false);
+  });
+
+  it('refuses a locked change and leaves the stored house alone', () => {
+    localStorage.setItem('house', 'leo');
+    localStorage.setItem('houseChangedAt', String(Date.now()));
+    profilModule.initHouseControl();
+
+    // The button is disabled, but a click must be harmless even so.
+    byHouse('Aries').click();
+    expect(localStorage.getItem('house')).toBe('leo');
+    expect((global as any).readOmens()).toHaveLength(0);
+  });
+
+  it('allows a change once the week is up', () => {
+    localStorage.setItem('house', 'leo');
+    localStorage.setItem('houseChangedAt', String(Date.now() - WEEK - 1000));
+    profilModule.initHouseControl();
+
+    expect(byHouse('Aries').disabled).toBe(false);
+    byHouse('Aries').click();
+    expect(localStorage.getItem('house')).toBe('aries');
+  });
+
+  // A mis-tap on the house you already hold must not cost a week.
+  it('re-picking the held house raises nothing and spends nothing', () => {
+    const stamp = String(Date.now() - WEEK - 1000);
+    localStorage.setItem('house', 'leo');
+    localStorage.setItem('houseChangedAt', stamp);
+    profilModule.initHouseControl();
+
+    byHouse('Leo').click();
+    expect(localStorage.getItem('houseChangedAt')).toBe(stamp);
+    expect((global as any).readOmens()).toHaveLength(0);
+  });
+
+  it('does nothing on a page without the picker', () => {
+    document.body.innerHTML = '';
+    expect(() => profilModule.initHouseControl()).not.toThrow();
   });
 });
 

@@ -400,6 +400,62 @@ main.app {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   HOUSE PICKER — Sanctuary › Your House
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* The defs carrier holds the glyph library and must never take up space. */
+.house-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.house-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  width: 100%;
+}
+
+.house-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  min-height: 44px;              /* the tap target, not the glyph */
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--gold-soft);
+  color: var(--fg-muted);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: color 0.15s, background 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+
+.house-glyph {
+  width: 60%;
+  height: 60%;
+  fill: none;
+  stroke: currentColor;
+}
+
+.house-btn:active:not(:disabled) { background: var(--gold-faint); }
+
+.house-btn.active {
+  background: var(--gold);
+  color: var(--gold-ink);
+  box-shadow: 0 0 14px var(--gold-halo);
+}
+
+/* Locked, not hidden: a control that vanishes reads as a bug. The held house
+   is never disabled, so it keeps its gold while the rest go quiet. */
+.house-btn:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    DANGER ZONE — Delete Account
 
    The only place in the app that speaks in --danger rather than --gold.
